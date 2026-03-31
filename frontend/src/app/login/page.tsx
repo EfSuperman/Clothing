@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
@@ -8,7 +8,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -126,5 +126,17 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-indigo" size={40} />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
