@@ -9,7 +9,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'https://clothing-frontend.vercel.app'],
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'https://clothing-frontend.vercel.app',
+    'https://frontend-one-theta-72.vercel.app',
+    /\.vercel\.app$/ // Allow all Vercel subdomains
+  ],
   credentials: true
 }));
 app.use(express.json());
