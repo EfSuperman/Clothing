@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import axios from "axios";
+import api from "@/lib/api";
 import { Search, SlidersHorizontal, Filter, X, ChevronDown, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,15 +29,14 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        let url = "http://localhost:5000/api/products";
         const params = new URLSearchParams();
         if (searchTerm) params.append("search", searchTerm);
         if (activeCategory !== "All") params.append("category", activeCategory);
         
         const queryString = params.toString();
-        if (queryString) url += `?${queryString}`;
+        const url = queryString ? `/products?${queryString}` : "/products";
 
-        const { data } = await axios.get(url);
+        const { data } = await api.get(url);
         setProducts(data);
       } catch (error) {
         console.error("Failed to fetch products", error);

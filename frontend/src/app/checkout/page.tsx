@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { ShieldCheck, Truck, CreditCard, Banknote, UploadCloud, ChevronLeft, CheckCircle2, AlertCircle } from "lucide-react";
@@ -85,10 +85,9 @@ export default function CheckoutPage() {
         formData.append("paymentScreenshot", screenshot);
       }
 
-      await axios.post("http://localhost:5000/api/orders", formData, {
+      await api.post("/orders", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       });
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import axios from "axios";
+import api from "@/lib/api";
 import { ArrowRight, Star, Shield, Truck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -29,7 +29,7 @@ export default function Home() {
   useEffect(() => {
     const fetchLatestProducts = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/products");
+        const { data } = await api.get("/products");
         setFeaturedProducts(data.slice(0, 4));
       } catch (error) {
         console.error("Failed to fetch products", error);

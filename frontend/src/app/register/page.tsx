@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/register", {
+      const { data } = await api.post("/auth/register", {
         name,
         email,
         password,

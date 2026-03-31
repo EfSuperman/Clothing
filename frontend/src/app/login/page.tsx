@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -25,7 +25,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/login", {
+      const { data } = await api.post("/auth/login", {
         email,
         password,
       });

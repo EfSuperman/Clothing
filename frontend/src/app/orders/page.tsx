@@ -1,7 +1,5 @@
-'use client';
-
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 
@@ -19,7 +17,7 @@ export default function OrderHistoryPage() {
 
     const fetchOrders = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/orders/my-orders', {
+        const { data } = await api.get('/orders/my-orders', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(data);

@@ -8,7 +8,10 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'https://clothing-frontend.vercel.app'],
+  credentials: true
+}));
 app.use(express.json());
 
 import authRoutes from './routes/auth.routes';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 
@@ -26,7 +26,7 @@ export default function AdminProductsPage() {
 
     const fetchCategories = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/products/categories');
+        const { data } = await api.get('/products/categories');
         setCategories(data);
       } catch (error) {
         console.error('Failed to load categories', error);
@@ -41,8 +41,8 @@ export default function AdminProductsPage() {
 
     try {
       const urlsArray = imageURLs.split(',').map((url) => url.trim()).filter((url) => url);
-      await axios.post(
-        'http://localhost:5000/api/products',
+      await api.post(
+        '/products',
         {
           name,
           description,

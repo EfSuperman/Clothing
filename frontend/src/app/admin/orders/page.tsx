@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 
@@ -19,7 +19,7 @@ export default function AdminOrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/orders', {
+        const { data } = await api.get('/orders', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(data);
@@ -35,8 +35,8 @@ export default function AdminOrdersPage() {
 
   const handleStatusUpdate = async (orderId: string, status: string) => {
     try {
-      await axios.patch(
-        `http://localhost:5000/api/orders/${orderId}/payment-status`,
+      await api.patch(
+        `/orders/${orderId}/payment-status`,
         { paymentStatus: status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -91,7 +91,7 @@ export default function AdminOrdersPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                   {order.paymentScreenshot ? (
-                    <a href={`http://localhost:5000${order.paymentScreenshot}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <a href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'}${order.paymentScreenshot}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
                       View SS
                     </a>
                   ) : (
