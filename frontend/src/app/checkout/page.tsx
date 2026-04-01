@@ -60,6 +60,7 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
+    const currentToken = useAuthStore.getState().token || token;
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -87,7 +88,7 @@ export default function CheckoutPage() {
 
       await api.post("/orders", formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${currentToken}`,
         },
       });
 
