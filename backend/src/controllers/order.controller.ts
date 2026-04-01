@@ -30,7 +30,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return {
         productId: item.productId,
         quantity: item.quantity,
-        priceAtPurchase: item.price,
+        priceAtOrder: item.price,
       };
     });
 
