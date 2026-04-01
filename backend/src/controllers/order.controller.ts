@@ -11,8 +11,17 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const { items, paymentMethod, shippingAddress } = req.body;
-    // items should be [{ productId, quantity, price }]
+    let { items, paymentMethod, shippingAddress } = req.body;
+    
+    // Parse items if they are sent as a JSON string (typical for multipart/form-data)
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (e) {
+        res.status(400).json({ message: 'Invalid items format' });
+        return;
+      }
+    }
     
     // Calculate total
     let totalAmount = 0;
