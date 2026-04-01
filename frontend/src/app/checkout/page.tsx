@@ -86,11 +86,32 @@ export default function CheckoutPage() {
         formData.append("paymentScreenshot", screenshot);
       }
 
-      await api.post("/orders", formData, {
+      // Failsafe token retrieval for production reliability
+      const localStorageData = typeof window !== 'undefined' ? localStorage.getItem('clothing-auth-storage') : null;
+      let finalToken = currentToken;
+      if (!finalToken && localStorageData) {
+        try {
+          const parsed = JSON.parse(localStorageData);
+          finalToken = parsed.state?.token;
+        } catch (e) {
+          console.error("Error parsing auth storage", e);
+        }
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://clothingbackend-hy15.onrender.com/api';
+      
+      const response = await fetch(`${apiUrl}/orders`, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${currentToken}`,
+          'Authorization': `Bearer ${finalToken}`,
         },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to place order');
+      }
 
       clearCart();
       router.push("/order-success");
