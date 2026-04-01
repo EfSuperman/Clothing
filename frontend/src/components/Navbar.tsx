@@ -28,6 +28,7 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Products", href: "/products" },
     { name: "Categories", href: "/products?filter=categories" },
+    ...(user?.role === 'ADMIN' ? [{ name: "Admin", href: "/admin/orders" }] : []),
   ];
 
   return (
@@ -86,7 +87,7 @@ const Navbar = () => {
 
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link href="/profile" className="text-slate-300 hover:text-white transition-colors">
+                <Link href="/orders" className="text-slate-300 hover:text-white transition-colors">
                   <User size={22} />
                 </Link>
                 <button 
@@ -142,6 +143,15 @@ const Navbar = () => {
                   className="block w-full text-center bg-brand-indigo text-white py-3 rounded-xl font-bold"
                 >
                   LOGIN
+                </Link>
+              )}
+              {user && (
+                <Link
+                  href="/orders"
+                  onClick={() => setIsOpen(false)}
+                  className="block text-lg font-medium text-slate-300 hover:text-brand-indigo"
+                >
+                  My Orders
                 </Link>
               )}
             </div>
