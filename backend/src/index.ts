@@ -13,9 +13,11 @@ app.use(cors({
     process.env.FRONTEND_URL || 'http://localhost:3000',
     'https://clothing-frontend.vercel.app',
     'https://frontend-one-theta-72.vercel.app',
-    /\.vercel\.app$/ // Allow all Vercel subdomains
+    /\.vercel\.app$/ 
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
