@@ -36,6 +36,15 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });
 });
 
+app.get('/api/test-db', async (req: Request, res: Response) => {
+  try {
+    const count = await prisma.product.count();
+    res.status(200).json({ status: 'ok', count });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: (error as Error).message });
+  }
+});
+
 app.get('/', (req: Request, res: Response) => {
   res.send('Clothing eCommerce Backend Running');
 });
