@@ -134,13 +134,13 @@ export default function AdminOrdersPage() {
                       <td className="px-8 py-6 whitespace-nowrap text-white font-black italic tracking-tighter">${Number(order.totalAmount || 0).toFixed(2)}</td>
                       <td className="px-8 py-6 whitespace-nowrap text-right space-x-3">
                         <button 
-                          onClick={() => handleStatusUpdate(order.id, 'Verified')} 
+                          onClick={() => handleStatusUpdate(order.id, 'VERIFIED')} 
                           className="bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[0.6rem] font-black uppercase tracking-widest border border-green-500/20 px-4 py-2 rounded-xl transition-all"
                         >
                           Verify
                         </button>
                         <button 
-                          onClick={() => handleStatusUpdate(order.id, 'Rejected')} 
+                          onClick={() => handleStatusUpdate(order.id, 'FAILED')} 
                           className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[0.6rem] font-black uppercase tracking-widest border border-red-500/20 px-4 py-2 rounded-xl transition-all"
                         >
                           Reject
