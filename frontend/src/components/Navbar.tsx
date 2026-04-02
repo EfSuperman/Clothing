@@ -45,10 +45,14 @@ const Navbar = () => {
           scrolled ? "shadow-2xl border-white/10" : "border-white/5"
         }`}>
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
-            <span className="text-2xl font-black tracking-tighter text-white uppercase group-hover:text-brand-indigo transition-colors">
-              CLS<span className="text-brand-indigo">.</span>
-            </span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <img src="/vision_logo.png" alt="VISION" className="h-8 w-auto" />
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-brand-indigo transition-colors italic">
+                VISION
+              </span>
+              <span className="text-[7px] text-slate-500 uppercase tracking-[0.25em] font-bold leading-none">Beyond the Visible</span>
+            </div>
           </Link>
 
           {/* Desktop Links */}

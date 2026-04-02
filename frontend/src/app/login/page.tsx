@@ -51,8 +51,10 @@ function LoginContent() {
           className="glass-dark rounded-[40px] border border-white/5 p-10 md:p-14 shadow-2xl"
         >
           <div className="text-center mb-10">
-            <Link href="/" className="inline-block text-3xl font-black tracking-tighter text-white uppercase mb-6">
-              CLS<span className="text-brand-indigo">.</span>
+            <Link href="/" className="inline-flex flex-col items-center gap-2 mb-6">
+              <img src="/vision_logo.png" alt="VISION" className="h-12 w-auto" />
+              <span className="text-3xl font-black tracking-tighter text-white uppercase italic">VISION</span>
+              <span className="text-[8px] text-brand-indigo uppercase tracking-[0.3em] font-bold">Beyond the Visible</span>
             </Link>
             <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Welcome Back</h1>
             <p className="text-slate-500 text-sm mt-2 font-medium">Access your personalized shopping experience.</p>
