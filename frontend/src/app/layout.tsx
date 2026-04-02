@@ -41,7 +41,13 @@ export default function RootLayout({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
               <div className="col-span-1 md:col-span-2">
                 <Link href="/" className="flex items-center gap-3 mb-4 group">
-                  <img src="/vision_logo.png" alt="VISION" className="h-10 w-auto" />
+                  <svg width="36" height="36" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M60 8 L108 60 L60 112 L12 60 Z" stroke="#c7d2fe" strokeWidth="2.5" fill="none" opacity="0.5" />
+                    <path d="M36 38 L60 88 L84 38" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M60 8 L36 38" stroke="#e0e7ff" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7" />
+                    <path d="M60 8 L84 38" stroke="#e0e7ff" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7" />
+                    <circle cx="60" cy="8" r="4" fill="white" opacity="0.8" />
+                  </svg>
                   <div>
                     <span className="text-2xl font-black tracking-tighter text-white uppercase block italic">VISION</span>
                     <span className="text-[9px] text-brand-indigo uppercase tracking-[0.3em] font-bold">Beyond the Visible</span>

@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Mail, User, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import VisionLogo from "@/components/VisionLogo";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -52,7 +53,7 @@ export default function RegisterPage() {
         >
           <div className="text-center mb-10">
             <Link href="/" className="inline-flex flex-col items-center gap-2 mb-6">
-              <img src="/vision_logo.png" alt="VISION" className="h-12 w-auto" />
+              <VisionLogo size={48} />
               <span className="text-3xl font-black tracking-tighter text-white uppercase italic">VISION</span>
               <span className="text-[8px] text-brand-indigo uppercase tracking-[0.3em] font-bold">Beyond the Visible</span>
             </Link>

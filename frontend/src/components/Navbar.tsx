@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
+import VisionLogo from "@/components/VisionLogo";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -46,7 +47,7 @@ const Navbar = () => {
         }`}>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/vision_logo.png" alt="VISION" className="h-8 w-auto" />
+            <VisionLogo size={30} />
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-brand-indigo transition-colors italic">
                 VISION
