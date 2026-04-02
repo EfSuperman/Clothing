@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 };
 
 import Navbar from "@/components/Navbar";
+import { Inter } from "next/font/google";
+// Triggering production rebuild to index new Dark Luxury routes.
 
 export default function RootLayout({
   children,
