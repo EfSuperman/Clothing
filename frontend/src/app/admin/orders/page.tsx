@@ -92,8 +92,8 @@ export default function AdminOrdersPage() {
           <div className="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-tr from-brand-indigo/10 to-brand-cyan/10 opacity-50 blur-3xl" />
           
           <div className="relative glass-dark rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-white/5 text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="min-w-[1000px] w-full divide-y divide-white/5 text-sm">
                 <thead>
                   <tr className="bg-white/[0.03]">
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Order ID</th>

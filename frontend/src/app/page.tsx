@@ -63,7 +63,7 @@ export default function Home() {
             <span className="inline-block px-4 py-1.5 mb-6 text-[10px] font-bold tracking-[0.2em] uppercase bg-brand-indigo/20 text-brand-indigo border border-brand-indigo/30 rounded-full backdrop-blur-md">
               New Collection 2026
             </span>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white mb-8 leading-[0.9]">
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-white mb-8 leading-[0.9]">
               THE FUTURE OF <br />
               <span className="text-gradient">ELEVATED STYLE.</span>
             </h1>
@@ -121,7 +121,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
             <div className="max-w-xl text-left">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
                 THE CURATED LIST.
               </h2>
               <p className="text-slate-400 font-medium">
@@ -183,7 +183,7 @@ export default function Home() {
       {/* Trust Badges */}
       <section className="py-24 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-center items-center">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 bg-brand-indigo/10 rounded-2xl flex items-center justify-center text-brand-indigo">
                 <Shield size={24} />

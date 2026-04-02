@@ -61,13 +61,13 @@ export default function ProductsPage() {
                 <span className="mx-2 text-white/20">/</span>
                 <span className="text-brand-indigo">Collections</span>
               </nav>
-              <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white">
                 ALL <span className="text-gradient">PRODUCTS.</span>
               </h1>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="relative group w-full md:w-80">
+            <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto">
+              <div className="relative group flex-1 md:w-80">
                 <input
                   type="text"
                   placeholder="Search collections..."

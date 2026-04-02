@@ -86,7 +86,7 @@ export default function OrderHistoryPage() {
                         Purchased on {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-10">
+                    <div className="flex flex-row md:items-center gap-6 md:gap-10 mt-4 md:mt-0">
                       <div className="text-left md:text-right">
                         <p className="text-[0.65rem] text-slate-500 font-mono tracking-widest uppercase mb-1">Status</p>
                         <span className={`inline-flex items-center px-4 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest leading-none

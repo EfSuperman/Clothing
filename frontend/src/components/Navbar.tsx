@@ -94,7 +94,7 @@ const Navbar = () => {
             </Link>
 
             {user ? (
-              <div className="flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-4">
                 <Link href="/orders" className="text-slate-300 hover:text-white transition-colors">
                   <User size={22} />
                 </Link>
@@ -108,7 +108,7 @@ const Navbar = () => {
             ) : (
               <Link 
                 href="/login" 
-                className="bg-brand-indigo hover:bg-brand-indigo/90 text-white text-xs font-bold px-5 py-2 rounded-lg transition-all active:scale-95"
+                className="hidden md:flex bg-brand-indigo hover:bg-brand-indigo/90 text-white text-xs font-bold px-5 py-2 rounded-lg transition-all active:scale-95"
               >
                 LOGIN
               </Link>
@@ -154,13 +154,21 @@ const Navbar = () => {
                 </Link>
               )}
               {user && (
-                <Link
-                  href="/orders"
-                  onClick={() => setIsOpen(false)}
-                  className="block text-lg font-medium text-slate-300 hover:text-brand-indigo"
-                >
-                  My Orders
-                </Link>
+                <>
+                  <Link
+                    href="/orders"
+                    onClick={() => setIsOpen(false)}
+                    className="block text-lg font-medium text-slate-300 hover:text-brand-indigo"
+                  >
+                    My Orders
+                  </Link>
+                  <button
+                    onClick={() => { setIsOpen(false); logout(); }}
+                    className="block w-full text-left text-lg font-medium text-brand-rose hover:text-brand-rose/80"
+                  >
+                    Logout
+                  </button>
+                </>
               )}
             </div>
           </motion.div>
