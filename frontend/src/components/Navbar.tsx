@@ -28,7 +28,10 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Products", href: "/products" },
     { name: "Categories", href: "/products?filter=categories" },
-    ...(user?.role === 'ADMIN' ? [{ name: "Admin", href: "/admin/orders" }] : []),
+    ...(user?.role === 'ADMIN' ? [
+      { name: "Orders", href: "/admin/orders" },
+      { name: "Products Admin", href: "/admin/products" }
+    ] : []),
   ];
 
   return (
