@@ -47,12 +47,12 @@ const Navbar = () => {
         }`}>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <VisionLogo size={30} />
+            <VisionLogo size={34} />
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-white uppercase group-hover:text-brand-indigo transition-colors italic">
+              <span className="text-xl font-black tracking-wider text-white uppercase group-hover:text-brand-indigo transition-colors" style={{fontFamily: 'var(--font-playfair), serif', letterSpacing: '0.15em'}}>
                 VISION
               </span>
-              <span className="text-[7px] text-slate-500 uppercase tracking-[0.25em] font-bold leading-none">Beyond the Visible</span>
+              <span className="text-[7px] text-slate-400 uppercase tracking-[0.25em] font-bold leading-none">Beyond the Visible</span>
             </div>
           </Link>
 

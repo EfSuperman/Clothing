@@ -52,10 +52,10 @@ export default function RegisterPage() {
           className="glass-dark rounded-[40px] border border-white/5 p-10 md:p-14 shadow-2xl"
         >
           <div className="text-center mb-10">
-            <Link href="/" className="inline-flex flex-col items-center gap-2 mb-6">
-              <VisionLogo size={48} />
-              <span className="text-3xl font-black tracking-tighter text-white uppercase italic">VISION</span>
-              <span className="text-[8px] text-brand-indigo uppercase tracking-[0.3em] font-bold">Beyond the Visible</span>
+            <Link href="/" className="inline-flex flex-col items-center gap-3 mb-6">
+              <VisionLogo size={56} />
+              <span className="text-3xl font-black tracking-wider text-white uppercase" style={{fontFamily: 'var(--font-playfair), serif', letterSpacing: '0.2em'}}>VISION</span>
+              <span className="text-[9px] text-brand-indigo uppercase tracking-[0.3em] font-bold">Beyond the Visible</span>
             </Link>
             <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Create Account</h1>
             <p className="text-slate-500 text-sm mt-2 font-medium">Join our community of elite style visionaries.</p>
