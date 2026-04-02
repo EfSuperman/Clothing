@@ -57,7 +57,7 @@ export default function AdminOrdersPage() {
   }
 
   // Calculate quick stats
-  const totalRevenue = orders.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  const totalRevenue = orders.reduce((acc, curr) => acc + Number(curr.totalAmount || 0), 0);
   const pendingOrders = orders.filter(o => o.paymentStatus === 'PENDING' || o.paymentStatus === 'Verification_Pending').length;
 
   return (
@@ -131,7 +131,7 @@ export default function AdminOrdersPage() {
                           <span className="text-slate-600 font-mono text-[0.6rem] uppercase tracking-widest italic">No Data</span>
                         )}
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-white font-black italic tracking-tighter">${order.totalAmount.toFixed(2)}</td>
+                      <td className="px-8 py-6 whitespace-nowrap text-white font-black italic tracking-tighter">${Number(order.totalAmount || 0).toFixed(2)}</td>
                       <td className="px-8 py-6 whitespace-nowrap text-right space-x-3">
                         <button 
                           onClick={() => handleStatusUpdate(order.id, 'Verified')} 

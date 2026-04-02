@@ -282,7 +282,7 @@ export default function AdminProductsPage() {
                         </span>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap text-white font-black italic tracking-tighter text-lg">
-                        ${product.price ? product.price.toFixed(2) : '0.00'}
+                        ${product.price ? Number(product.price).toFixed(2) : '0.00'}
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="flex items-center gap-2">

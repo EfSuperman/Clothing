@@ -98,7 +98,7 @@ export default function OrderHistoryPage() {
                       </div>
                       <div className="text-left md:text-right">
                         <p className="text-[0.65rem] text-slate-500 font-mono tracking-widest uppercase mb-1">Total Value</p>
-                        <p className="text-2xl font-black text-white italic tracking-tight">${order.totalAmount.toFixed(2)}</p>
+                        <p className="text-2xl font-black text-white italic tracking-tight">${Number(order.totalAmount || 0).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
