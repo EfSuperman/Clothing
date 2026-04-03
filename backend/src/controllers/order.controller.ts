@@ -1,6 +1,45 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { deleteCloudinaryImage } from '../utils/cloudinary';
+import { sendOrderConfirmationEmail, sendPaymentStatusEmail } from '../utils/email';
+
+const MAX_ORDERS = 50; // Keep only the most recent 50 orders
+
+// Auto-cleanup: delete oldest orders beyond the limit
+async function cleanupOldOrders(): Promise<void> {
+  try {
+    const totalOrders = await prisma.order.count();
+    
+    if (totalOrders > MAX_ORDERS) {
+      const ordersToDelete = totalOrders - MAX_ORDERS;
+
+      // Find the oldest orders
+      const oldOrders = await prisma.order.findMany({
+        orderBy: { createdAt: 'asc' },
+        take: ordersToDelete,
+        select: { id: true, paymentScreenshot: true },
+      });
+
+      for (const order of oldOrders) {
+        // Delete Cloudinary image if exists
+        if (order.paymentScreenshot) {
+          await deleteCloudinaryImage(order.paymentScreenshot);
+        }
+
+        // Delete order items first (foreign key)
+        await prisma.orderItem.deleteMany({ where: { orderId: order.id } });
+        
+        // Delete the order
+        await prisma.order.delete({ where: { id: order.id } });
+      }
+
+      console.log(`🧹 Auto-cleanup: Deleted ${ordersToDelete} old order(s)`);
+    }
+  } catch (error) {
+    console.error('Auto-cleanup error:', error);
+  }
+}
 
 // Create a new order
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -37,9 +76,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     let paymentScreenshot = null;
     let paymentStatus: 'PENDING' | 'VERIFICATION_PENDING' = 'PENDING';
 
-    // Handle bank transfer screenshot
+    // Handle bank transfer screenshot (now uploaded to Cloudinary via multer middleware)
     if (paymentMethod === 'BANK_TRANSFER' && req.file) {
-      paymentScreenshot = `/uploads/${req.file.filename}`;
+      // Cloudinary multer stores the URL in req.file.path
+      paymentScreenshot = (req.file as any).path;
       paymentStatus = 'VERIFICATION_PENDING';
     } else if (paymentMethod === 'BANK_TRANSFER' && !req.file) {
       res.status(400).json({ message: 'Payment screenshot is required for Bank Transfer' });
@@ -61,6 +101,24 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         orderItems: true,
       },
     });
+
+    // Fetch user email for confirmation
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    
+    // Send order confirmation email (non-blocking)
+    if (user?.email) {
+      sendOrderConfirmationEmail(
+        user.email,
+        user.name || 'Customer',
+        order.id,
+        totalAmount,
+        orderItemsData.length,
+        paymentMethod
+      ).catch(err => console.error('Email send failed:', err));
+    }
+
+    // Run auto-cleanup in background (non-blocking)
+    cleanupOldOrders().catch(err => console.error('Cleanup failed:', err));
 
     res.status(201).json(order);
   } catch (error) {
@@ -115,7 +173,21 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
     const order = await prisma.order.update({
       where: { id: id as string },
       data: { paymentStatus },
+      include: {
+        user: { select: { email: true, name: true } },
+      },
     });
+
+    // Send payment status email to customer (non-blocking)
+    if (order.user?.email && (paymentStatus === 'VERIFIED' || paymentStatus === 'FAILED')) {
+      sendPaymentStatusEmail(
+        order.user.email,
+        order.user.name || 'Customer',
+        order.id,
+        paymentStatus,
+        Number(order.totalAmount)
+      ).catch(err => console.error('Email send failed:', err));
+    }
 
     res.status(200).json(order);
   } catch (error) {
