@@ -11,6 +11,7 @@ const app = express();
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3001',
     'https://clothing-frontend.vercel.app',
     'https://frontend-one-theta-72.vercel.app',
     /\.vercel\.app$/ 

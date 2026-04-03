@@ -115,15 +115,15 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <span className={`px-4 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest
-                          ${order.paymentStatus === 'Verified' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
-                            order.paymentStatus === 'Rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
+                          ${order.paymentStatus === 'VERIFIED' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
+                            order.paymentStatus === 'FAILED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
                             'bg-brand-indigo/10 text-brand-indigo border border-brand-indigo/20'}`}>
                           {order.paymentStatus.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         {order.paymentScreenshot ? (
-                          <a href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || ''}${order.paymentScreenshot}`} target="_blank" rel="noopener noreferrer" 
+                          <a href={order.paymentScreenshot.startsWith('http') ? order.paymentScreenshot : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || ''}${order.paymentScreenshot}`} target="_blank" rel="noopener noreferrer" 
                              className="text-brand-indigo hover:text-brand-indigo/80 font-mono text-[0.6rem] uppercase tracking-widest border-b border-brand-indigo/30 pb-0.5">
                             Validate SS
                           </a>

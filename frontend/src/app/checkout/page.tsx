@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [shippingAddress, setShippingAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"COD" | "Bank_Transfer">("COD");
+  const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER">("COD");
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -77,7 +77,7 @@ export default function CheckoutPage() {
       formData.append("paymentMethod", paymentMethod);
       formData.append("shippingAddress", shippingAddress);
 
-      if (paymentMethod === "Bank_Transfer") {
+      if (paymentMethod === "BANK_TRANSFER") {
         if (!screenshot) {
           setError("Please upload your payment screenshot to verify the transfer.");
           setLoading(false);
@@ -98,7 +98,7 @@ export default function CheckoutPage() {
         }
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://clothingbackend-hy15.onrender.com/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       
       const response = await fetch(`${apiUrl}/orders`, {
         method: 'POST',
@@ -116,7 +116,7 @@ export default function CheckoutPage() {
       clearCart();
       router.push("/order-success");
     } catch (err: any) {
-      setError(err.response?.data?.message || "An error occurred while processing your order. Please try again.");
+      setError(err.message || "An error occurred while processing your order. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -189,9 +189,9 @@ export default function CheckoutPage() {
 
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod("Bank_Transfer")}
+                      onClick={() => setPaymentMethod("BANK_TRANSFER")}
                       className={`relative flex flex-col items-start p-6 rounded-2xl border transition-all text-left group ${
-                        paymentMethod === "Bank_Transfer" 
+                        paymentMethod === "BANK_TRANSFER" 
                           ? "bg-brand-indigo/10 border-brand-indigo/50 text-white" 
                           : "bg-surface-950/50 border-white/5 text-slate-500 hover:border-white/10"
                       }`}
@@ -199,12 +199,12 @@ export default function CheckoutPage() {
                       <CreditCard className="mb-4" size={24} />
                       <span className="font-bold text-sm uppercase tracking-widest mb-1">Direct Bank Transfer</span>
                       <span className="text-[10px] opacity-60">Instant verification via screenshot.</span>
-                      {paymentMethod === "Bank_Transfer" && <CheckCircle2 className="absolute top-4 right-4 text-brand-indigo" size={20} />}
+                      {paymentMethod === "BANK_TRANSFER" && <CheckCircle2 className="absolute top-4 right-4 text-brand-indigo" size={20} />}
                     </button>
                   </div>
 
                   <AnimatePresence>
-                    {paymentMethod === "Bank_Transfer" && (
+                    {paymentMethod === "BANK_TRANSFER" && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
