@@ -51,7 +51,8 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zip: "",
-    country: ""
+    country: "",
+    phone: ""
   });
 
   const [countrySearch, setCountrySearch] = useState("");
@@ -73,7 +74,8 @@ export default function CheckoutPage() {
     newAddress.city && 
     newAddress.state && 
     newAddress.zip && 
-    newAddress.country
+    newAddress.country &&
+    newAddress.phone
   );
 
   useEffect(() => {
@@ -181,6 +183,7 @@ export default function CheckoutPage() {
         formData.append("state", newAddress.state);
         formData.append("zip", newAddress.zip);
         formData.append("country", newAddress.country);
+        formData.append("phone", newAddress.phone);
         formData.append("saveAddress", String(saveAddress));
       } else {
         if (!selectedAddressId) {
@@ -408,6 +411,21 @@ export default function CheckoutPage() {
                             onChange={(e) => setNewAddress({...newAddress, zip: e.target.value})}
                           />
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Phone Number (For Delivery Contact)</label>
+                        <input
+                          required
+                          type="tel"
+                          placeholder="e.g. +92 300 1234567"
+                          className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-bold tracking-widest"
+                          value={newAddress.phone}
+                          onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
+                        />
+                        <p className="text-[9px] text-slate-600 px-1 uppercase tracking-widest leading-relaxed">
+                          We will only contact you if there is an issue with your delivery.
+                        </p>
                       </div>
 
                       {isAuthenticated && (

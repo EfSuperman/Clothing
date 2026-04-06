@@ -98,6 +98,7 @@ export default function AdminOrdersPage() {
                   <tr className="bg-white/[0.03]">
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Order ID</th>
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Client</th>
+                    <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Phone</th>
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Method</th>
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Status</th>
                     <th className="px-8 py-6 text-left font-mono text-[0.65rem] text-slate-500 uppercase tracking-widest">Proof</th>
@@ -109,7 +110,15 @@ export default function AdminOrdersPage() {
                   {orders.map((order) => (
                     <tr key={order.id} className="hover:bg-white/[0.01] transition-colors">
                       <td className="px-8 py-6 whitespace-nowrap text-white font-mono text-xs">#{order.id.slice(-6)}</td>
-                      <td className="px-8 py-6 whitespace-nowrap text-slate-300 italic font-bold">{order.user?.email || 'N/A'}</td>
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-slate-300 italic font-bold">{order.user?.name || 'Guest'}</span>
+                          <span className="text-[10px] text-slate-500">{order.user?.email || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap text-brand-indigo font-bold tracking-widest text-xs">
+                        {order.shippingAddress?.phone || order.user?.phone || 'N/A'}
+                      </td>
                       <td className="px-8 py-6 whitespace-nowrap text-slate-400 font-medium">
                         {order.paymentMethod.replace('_', ' ')}
                       </td>

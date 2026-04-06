@@ -175,11 +175,7 @@ export default function CartPage() {
                 </Link>
 
                 <button
-                  onClick={() => {
-                    if (confirm("Are you sure you want to clear your shopping bag?")) {
-                      clearCart();
-                    }
-                  }}
+                  onClick={() => clearCart()}
                   className="w-full py-4 text-[10px] font-bold text-brand-rose/60 hover:text-brand-rose transition-colors uppercase tracking-[0.2em] mt-2"
                 >
                   Clear Shopping Bag

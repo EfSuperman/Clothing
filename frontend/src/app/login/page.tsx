@@ -8,6 +8,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import VisionLogo from "@/components/VisionLogo";
+import { GoogleLogin } from "@react-oauth/google";
 
 function LoginContent() {
   const [email, setEmail] = useState("");
@@ -35,6 +36,22 @@ function LoginContent() {
       router.push(redirect);
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.post("/auth/google", {
+        idToken: credentialResponse.credential,
+      });
+      login(data.user, data.token);
+      router.push(redirect);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Google Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -117,6 +134,25 @@ function LoginContent() {
               )}
             </button>
           </form>
+
+          <div className="relative my-10">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5" />
+            </div>
+            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.4em] text-slate-500">
+              <span className="bg-[#0a0a0b] px-4">OR SECURE ACCESS WITH</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google login failed.")}
+              shape="pill"
+              theme="filled_black"
+              width="100%"
+            />
+          </div>
 
           <div className="mt-10 pt-10 border-t border-white/5 text-center">
             <p className="text-sm text-slate-500 font-medium">

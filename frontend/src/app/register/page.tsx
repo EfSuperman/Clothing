@@ -8,11 +8,13 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Mail, User, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import VisionLogo from "@/components/VisionLogo";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -21,20 +23,49 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Standard email check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (phone && phone.length < 8) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
+
     setLoading(true);
-    setError("");
 
     try {
       const { data } = await api.post("/auth/register", {
         name,
         email,
         password,
+        phone,
       });
 
       login(data.user, data.token);
       router.push("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.post("/auth/google", {
+        idToken: credentialResponse.credential,
+      });
+      login(data.user, data.token);
+      router.push("/");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Google Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,6 +149,20 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Phone Number (Optional)</label>
+              <div className="relative group">
+                <input
+                  type="tel"
+                  placeholder="+92 300 1234567"
+                  className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white focus:outline-none focus:border-brand-indigo/50 transition-all group-hover:border-white/10 font-bold tracking-widest"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-indigo transition-colors" size={18} />
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -130,6 +175,26 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
+
+          <div className="relative my-10">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5" />
+            </div>
+            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.4em] text-slate-500">
+              <span className="bg-[#0a0a0b] px-4">OR SECURE ACCESS WITH</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google login failed.")}
+              shape="pill"
+              theme="filled_black"
+              width="100%"
+              text="signup_with"
+            />
+          </div>
 
           <div className="mt-10 pt-10 border-t border-white/5 text-center">
             <p className="text-sm text-slate-500 font-medium">
