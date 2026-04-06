@@ -6,6 +6,19 @@ import api from "@/lib/api";
 import { ArrowRight, Star, Shield, Truck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { FormattedPrice } from "@/components/FormattedPrice";
+import dynamic from "next/dynamic";
+
+const ShirtCustomizer = dynamic(() => import("@/components/ShirtCustomizer"), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-screen bg-surface-950 flex flex-col items-center justify-center space-y-4">
+      <div className="h-0.5 w-48 bg-white/5 overflow-hidden rounded-full relative">
+        <div className="absolute inset-0 bg-brand-indigo w-1/3 animate-loading-bar" />
+      </div>
+      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Initializing Studio</span>
+    </div>
+  )
+});
 
 interface Product {
   id: string;
@@ -182,6 +195,9 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* 3D Customizer Section */}
+      <ShirtCustomizer />
 
       {/* Trust Badges */}
       <section className="py-24 border-y border-white/5">

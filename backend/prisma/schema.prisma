@@ -153,3 +153,10 @@ model WishlistItem {
   product   Product  @relation(fields: [productId], references: [id])
   dateAdded DateTime @default(now())
 }
+
+model Decal {
+  id        String   @id @default(uuid())
+  name      String
+  imageUrl  String
+  createdAt DateTime @default(now())
+}

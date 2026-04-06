@@ -84,3 +84,23 @@ body {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
 }
+
+/* Custom Animations */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}

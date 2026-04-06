@@ -1,0 +1,161 @@
+"use client";
+
+import React, { useState, useEffect, Suspense } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import api from "@/lib/api";
+import { 
+  OrbitControls, 
+  Center, 
+  useGLTF, 
+  Decal, 
+  Float, 
+  Sphere 
+} from "@react-three/drei";
+import * as THREE from "three";
+import { motion } from "framer-motion";
+import { Palette, Image as ImageIcon, RotateCcw, Box, Check, Sparkles } from "lucide-react";
+
+const COLORS = [
+  { name: "Infinity Black", value: "#050505" },
+  { name: "Visionary White", value: "#ffffff" },
+  { name: "Brand Indigo", value: "#6366f1" },
+  { name: "Rose Quartz", value: "#fda4af" },
+  { name: "Emerald Glaze", value: "#10b981" },
+  { name: "Amber Glow", value: "#f59e0b" },
+];
+
+const DEFAULT_DESIGNS = [
+  { id: "none", name: "Clean", url: null },
+  { id: "vision", name: "Vision Logo", url: "/vision_logo.png" },
+];
+
+class SceneErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() { if (this.state.hasError) return this.props.fallback; return this.props.children; }
+}
+
+function DecalImage({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  return <Decal position={position} rotation={[0, 0, 0]} scale={scale} map={texture} />;
+}
+
+function VisionaryCore({ color, decalUrl }: { color: string; decalUrl: string | null }) {
+  return (
+    <Float speed={2} rotationIntensity={1.5} floatIntensity={2}>
+      <Sphere args={[0.5, 32, 32]}>
+        <meshStandardMaterial color={color} roughness={0.1} metalness={0.8} />
+        {decalUrl && (
+          <SceneErrorBoundary key={decalUrl} fallback={null}>
+            <Suspense fallback={null}>
+              <DecalImage url={decalUrl} position={[0, 0, 0.45]} scale={0.4} />
+            </Suspense>
+          </SceneErrorBoundary>
+        )}
+      </Sphere>
+    </Float>
+  );
+}
+
+function Shirt({ color, decalUrl }: { color: string; decalUrl: string | null }) {
+  const { nodes, materials } = useGLTF("/shirt_baked.glb") as any;
+
+  useFrame((state, delta) => {
+    if (materials.lambert1) materials.lambert1.color.lerp(new THREE.Color(color), 0.1);
+  });
+
+  const shirtGeometry = nodes.T_Shirt_male?.geometry || nodes.Object_4?.geometry || nodes.mesh_0?.geometry;
+
+  return (
+    <mesh castShadow geometry={shirtGeometry} material={materials.lambert1} dispose={null}>
+      {decalUrl && (
+        <SceneErrorBoundary key={decalUrl} fallback={null}>
+          <Suspense fallback={null}>
+            <DecalImage url={decalUrl} position={[0, 0.04, 0.15]} scale={0.15} />
+          </Suspense>
+        </SceneErrorBoundary>
+      )}
+    </mesh>
+  );
+}
+
+export default function ShirtCustomizer() {
+  const [currentColor, setCurrentColor] = useState(COLORS[0].value);
+  const [selectedDesign, setSelectedDesign] = useState<string>("none");
+  const [designs, setDesigns] = useState(DEFAULT_DESIGNS);
+
+  useEffect(() => {
+    const fetchDecals = async () => {
+      try {
+        const res = await api.get('/decals');
+        const customDecals = res.data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          url: d.imageUrl
+        }));
+        setDesigns([...DEFAULT_DESIGNS, ...customDecals]);
+      } catch (error) {
+        console.error("Failed to load custom decals from Admin", error);
+      }
+    };
+    fetchDecals();
+  }, []);
+
+  const decalUrl = designs.find(d => d.id === selectedDesign)?.url || null;
+
+  return (
+    <section id="customizer" className="relative w-full min-h-[100dvh] bg-surface-950 flex flex-col md:flex-row pt-20">
+      <div className="flex-1 relative order-1 h-[55vh] md:h-auto min-h-[400px]">
+        <Canvas shadows camera={{ position: [0, 0, 2.5], fov: 25 }} gl={{ preserveDrawingBuffer: true, alpha: true }}>
+          <ambientLight intensity={0.8} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
+          <Suspense fallback={<VisionaryCore color={currentColor} decalUrl={decalUrl} />}>
+            <SceneErrorBoundary fallback={<VisionaryCore color={currentColor} decalUrl={decalUrl} />}>
+              <Center><Shirt color={currentColor} decalUrl={decalUrl} /></Center>
+            </SceneErrorBoundary>
+          </Suspense>
+          <OrbitControls enablePan={false} enableZoom={true} minPolarAngle={Math.PI/4} maxPolarAngle={Math.PI/2} />
+        </Canvas>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 glass-dark rounded-full border border-white/5 pointer-events-none">
+          <RotateCcw size={14} className="text-brand-indigo animate-spin-slow" />
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Drag to Explore 360°</span>
+        </div>
+      </div>
+
+      <div className="w-full md:w-[500px] p-6 md:p-12 z-10 order-2 flex flex-col justify-center bg-surface-950/80 md:bg-surface-950 backdrop-blur-3xl border-t md:border-t-0 md:border-l border-white/5 pb-24 md:pb-12 h-auto max-h-[50vh] md:max-h-full overflow-y-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="space-y-8 md:space-y-12">
+          <div className="space-y-4 text-center md:text-left">
+            <h3 className="text-brand-indigo font-black text-xs uppercase tracking-[0.4em]">Studio Customizer</h3>
+            <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-[0.9]">
+              Visionary<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-indigo via-brand-rose to-brand-amber">Craftsmanship</span>
+            </h2>
+          </div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-6 gap-3">
+              {COLORS.map((color) => (
+                <button key={color.value} onClick={() => setCurrentColor(color.value)} className={`h-10 w-10 rounded-2xl border transition-all flex items-center justify-center ${currentColor === color.value ? "border-brand-indigo scale-110" : "border-white/5"}`} style={{ backgroundColor: color.value }}>
+                  {currentColor === color.value && <Check size={14} className={color.value === "#ffffff" ? "text-black" : "text-white"} />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
+            {designs.map((design) => (
+              <button key={design.id} onClick={() => setSelectedDesign(design.id)} className={`flex flex-col items-start p-4 md:p-6 rounded-[1.5rem] md:rounded-3xl border transition-all ${selectedDesign === design.id ? "bg-brand-rose/10 border-brand-rose/50 text-white" : "bg-white/[0.02] border-white/5 text-slate-500 hover:bg-white/5"}`}>
+                <span className="font-bold text-[10px] uppercase tracking-[0.2em] mb-2 truncate w-full text-left">{design.name}</span>
+                <Sparkles size={10} className={selectedDesign === design.id ? "text-brand-rose" : "text-slate-700"} />
+              </button>
+            ))}
+          </div>
+          <button className="w-full bg-white text-black font-black py-5 rounded-[2rem] text-xs uppercase tracking-[0.3em] hover:bg-brand-indigo hover:text-white transition-all shadow-2xl">
+             Lock In Selection <Box size={14} className="inline ml-2" />
+          </button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+if (typeof window !== "undefined") {
+  useGLTF.preload("/shirt_baked.glb");
+}

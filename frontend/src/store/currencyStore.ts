@@ -53,17 +53,22 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
 
   detectAndSetCurrency: async () => {
     try {
-      // Try to detect currency via IP
-      const { data } = await axios.get('https://ip-api.com/json');
-      const detectedCurrency = data.currency || 'PKR';
+      // Try to detect currency via IP - handle 403 or other failures gracefully
+      const response = await axios.get('https://ip-api.com/json').catch(() => null);
       
-      // Some countries might have currencies we don't handle well, fallback to USD if not PKR or known
+      if (!response || !response.data) {
+        console.warn('IP-API blocked or failed, defaulting to PKR');
+        get().setCurrency('PKR');
+        return;
+      }
+
+      const detectedCurrency = response.data.currency || 'PKR';
       const supportedCurrencies = ['PKR', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
       const finalCurrency = supportedCurrencies.includes(detectedCurrency) ? detectedCurrency : 'USD';
       
       get().setCurrency(finalCurrency);
     } catch (error) {
-      console.error('IP Detection failed, defaulting to PKR', error);
+      console.warn('Currency detection exception, defaulting to PKR');
       get().setCurrency('PKR');
     }
   },
