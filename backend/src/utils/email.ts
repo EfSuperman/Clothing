@@ -147,3 +147,56 @@ export async function sendPaymentStatusEmail(
     console.error('Failed to send payment status email:', error);
   }
 }
+
+export async function sendAdminOrderNotificationEmail(
+  orderId: string,
+  totalAmount: number,
+  customerName: string,
+  customerEmail: string,
+  paymentMethod: string
+): Promise<void> {
+  const content = `
+    <p style="color:${TEXT_COLOR}; font-size:15px; line-height:1.6; margin:0 0 24px 0;">
+      A new order has been placed on <strong>VISION</strong>.
+    </p>
+    <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:24px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Order ID</td>
+          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">#${orderId.slice(0, 8)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Customer</td>
+          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${customerName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Email</td>
+          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${customerEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Amount</td>
+          <td style="padding:8px 0; color:${BRAND_COLOR}; font-size:18px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
+          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${paymentMethod}</td>
+        </tr>
+      </table>
+    </div>
+    <div style="text-align:center;">
+      <a href="https://vision-vsn.vercel.app/admin/orders" style="display:inline-block; padding:12px 24px; background:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:12px; font-weight:bold; font-size:14px;">VIEW ORDER IN DASHBOARD</a>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"VISION System" <${process.env.SMTP_EMAIL}>`,
+      to: process.env.SMTP_EMAIL, // Send to the store owner
+      subject: `🚨 NEW ORDER: #${orderId.slice(0, 8)} - $${totalAmount.toFixed(2)}`,
+      html: baseTemplate('New Order Received 📦', content),
+    });
+    console.log(`📧 Admin notification sent for order ${orderId}`);
+  } catch (error) {
+    console.error('Failed to send admin notification email:', error);
+  }
+}

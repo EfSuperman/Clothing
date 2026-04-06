@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { deleteCloudinaryImage } from '../utils/cloudinary';
-import { sendOrderConfirmationEmail, sendPaymentStatusEmail } from '../utils/email';
+import { sendOrderConfirmationEmail, sendPaymentStatusEmail, sendAdminOrderNotificationEmail } from '../utils/email';
 
 const MAX_ORDERS = 50; // Keep only the most recent 50 orders
 
@@ -152,6 +152,15 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         orderItemsData.length,
         paymentMethod
       ).catch(err => console.error('Email send failed:', err));
+
+      // 🚨 Notify Admin of new order
+      sendAdminOrderNotificationEmail(
+        order.id,
+        totalAmount,
+        user.name || 'Customer',
+        user.email,
+        paymentMethod
+      ).catch(err => console.error('Admin Email Notification failed:', err));
     }
 
     // Run auto-cleanup in background (non-blocking)
