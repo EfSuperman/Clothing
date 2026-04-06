@@ -5,6 +5,7 @@ import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ChevronRight } from "luci
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { FormattedPrice } from "@/components/FormattedPrice";
 
 export default function CartPage() {
   const { items: rawItems, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
@@ -93,7 +94,9 @@ export default function CartPage() {
                             Premium Selection
                           </p>
                         </div>
-                        <p className="text-2xl font-black text-white">${item.price}</p>
+                        <p className="text-2xl font-black text-white">
+                          <FormattedPrice amount={item.price} />
+                        </p>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-6 pt-6">
@@ -136,21 +139,27 @@ export default function CartPage() {
               <div className="space-y-4">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-slate-500 uppercase tracking-widest">Subtotal</span>
-                  <span className="text-white">${subtotal.toFixed(2)}</span>
+                  <span className="text-white">
+                    <FormattedPrice amount={subtotal} />
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-slate-500 uppercase tracking-widest">Shipping</span>
                   <span className="text-white">
-                    {shipping === 0 ? <span className="text-brand-cyan">FREE</span> : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? <span className="text-brand-cyan">FREE</span> : <FormattedPrice amount={shipping} />}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-slate-500 uppercase tracking-widest">Estimated Tax</span>
-                  <span className="text-white">${tax.toFixed(2)}</span>
+                  <span className="text-white">
+                    <FormattedPrice amount={tax} />
+                  </span>
                 </div>
                 <div className="pt-4 border-t border-white/10 flex justify-between">
                   <span className="text-lg font-bold text-white uppercase tracking-tighter">Total</span>
-                  <span className="text-3xl font-black text-brand-indigo">${total.toFixed(2)}</span>
+                  <span className="text-3xl font-black text-brand-indigo">
+                    <FormattedPrice amount={total} />
+                  </span>
                 </div>
                 <button
                   onClick={() => router.push("/checkout")}

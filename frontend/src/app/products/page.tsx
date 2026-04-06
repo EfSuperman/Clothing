@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { Search, SlidersHorizontal, Filter, X, ChevronDown, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FormattedPrice } from "@/components/FormattedPrice";
 
 interface Product {
   id: string;
@@ -171,7 +172,9 @@ export default function ProductsPage() {
                         <h3 className="text-base font-bold text-white group-hover:text-brand-indigo transition-colors truncate">
                           {product.name}
                         </h3>
-                        <p className="text-lg font-black text-white">${product.price}</p>
+                        <p className="text-lg font-black text-white">
+                          <FormattedPrice amount={product.price} />
+                        </p>
                       </div>
                     </Link>
                   </motion.div>

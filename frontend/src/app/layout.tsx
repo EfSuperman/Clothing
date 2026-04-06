@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 import Navbar from "@/components/Navbar";
 import { Inter } from "next/font/google";
-// Triggering production rebuild to index new Dark Luxury routes.
+import GlobalProviders from "@/components/GlobalProviders";
 
 export default function RootLayout({
   children,
@@ -40,8 +40,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-surface-950 text-slate-200 antialiased selection:bg-brand-indigo/30">
         <div className="glow-bg" />
-        <Navbar />
-        <main className="flex-grow relative">{children}</main>
+        <GlobalProviders>
+          <Navbar />
+          <main className="flex-grow relative">{children}</main>
+        </GlobalProviders>
         <footer className="bg-surface-950/50 backdrop-blur-md border-t border-white/5 py-16 mt-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">

@@ -25,6 +25,7 @@ app.use(express.json());
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import orderRoutes from './routes/order.routes';
+import addressRoutes from './routes/address.routes';
 import path from 'path';
 
 // Serve uploaded files
@@ -34,6 +35,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/addresses', addressRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });

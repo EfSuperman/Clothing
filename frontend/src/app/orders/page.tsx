@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { FormattedPrice } from '@/components/FormattedPrice';
 
 export default function OrderHistoryPage() {
   const { isAuthenticated, token } = useAuthStore();
@@ -98,7 +99,9 @@ export default function OrderHistoryPage() {
                       </div>
                       <div className="text-left md:text-right">
                         <p className="text-[0.65rem] text-slate-500 font-mono tracking-widest uppercase mb-1">Total Value</p>
-                        <p className="text-2xl font-black text-white italic tracking-tight">${Number(order.totalAmount || 0).toFixed(2)}</p>
+                        <p className="text-2xl font-black text-white italic tracking-tight">
+                          <FormattedPrice amount={order.totalAmount || 0} />
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -117,10 +120,12 @@ export default function OrderHistoryPage() {
                           </div>
                           <div className="space-y-1">
                             <h4 className="text-lg font-bold text-white tracking-tight uppercase italic">{item.product?.name || 'Unknown Product'}</h4>
-                            <p className="text-[0.7rem] text-slate-500 font-mono tracking-widest uppercase">Qty: {item.quantity} × ${item.priceAtOrder}</p>
+                            <p className="text-[0.7rem] text-slate-500 font-mono tracking-widest uppercase">Qty: {item.quantity} × <FormattedPrice amount={item.priceAtOrder} /></p>
                           </div>
                         </div>
-                        <div className="text-xl font-bold text-slate-300 italic tracking-tighter">${(item.priceAtOrder * item.quantity).toFixed(2)}</div>
+                        <div className="text-xl font-bold text-slate-300 italic tracking-tighter">
+                          <FormattedPrice amount={item.priceAtOrder * item.quantity} />
+                        </div>
                       </li>
                     ))}
                   </ul>

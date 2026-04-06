@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { ArrowRight, Star, Shield, Truck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { FormattedPrice } from "@/components/FormattedPrice";
 
 interface Product {
   id: string;
@@ -165,7 +166,9 @@ export default function Home() {
                         {product.name}
                       </h3>
                       <div className="flex items-center justify-between">
-                        <p className="text-lg font-black text-white">${product.price}</p>
+                        <p className="text-lg font-black text-white">
+                          <FormattedPrice amount={product.price} />
+                        </p>
                         <div className="flex items-center text-brand-indigo">
                           <Star size={12} fill="currentColor" />
                           <span className="ml-1 text-[10px] font-bold text-slate-400">4.9 (120)</span>
@@ -199,7 +202,7 @@ export default function Home() {
               </div>
               <div>
                 <h4 className="text-sm font-bold text-white">Fast Shipping</h4>
-                <p className="text-xs text-slate-500">Free over $150</p>
+                <p className="text-xs text-slate-500">Free over <FormattedPrice amount={150} /></p>
               </div>
             </div>
             <div className="flex flex-col items-center gap-4">

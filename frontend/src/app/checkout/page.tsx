@@ -1,27 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
-import { ShieldCheck, Truck, CreditCard, Banknote, UploadCloud, ChevronLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { 
+  ShieldCheck, 
+  Truck, 
+  CreditCard, 
+  Banknote, 
+  UploadCloud, 
+  ChevronLeft, 
+  CheckCircle2, 
+  AlertCircle,
+  MapPin,
+  Plus,
+  Check,
+  Globe,
+  Search,
+  ChevronDown
+} from "lucide-react";
+import { COUNTRIES } from "@/utils/countries";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { FormattedPrice } from "@/components/FormattedPrice";
+
+interface Address {
+  id: string;
+  name: string;
+  line1: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
 
 export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore();
   const { isAuthenticated, token, user } = useAuthStore();
   const router = useRouter();
 
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  
+  // Structured Address State
+  const [newAddress, setNewAddress] = useState({
+    name: "Home",
+    line1: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: ""
+  });
+
+  const [countrySearch, setCountrySearch] = useState("");
+  const [showCountryList, setShowCountryList] = useState(false);
+  const filteredCountries = COUNTRIES.filter(c => 
+    c.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  const [deliveryMethod, setDeliveryMethod] = useState<"STANDARD" | "EXPRESS">("STANDARD");
+  const [saveAddress, setSaveAddress] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER">("COD");
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isAddressComplete = selectedAddressId !== "new" || (
+    newAddress.name && 
+    newAddress.line1 && 
+    newAddress.city && 
+    newAddress.state && 
+    newAddress.zip && 
+    newAddress.country
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showCountryList && !(e.target as HTMLElement).closest('.country-dropdown-container')) {
+        setShowCountryList(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCountryList]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAddresses();
+    }
+  }, [isAuthenticated, token]);
+
+  const fetchAddresses = async () => {
+    try {
+      const { data } = await api.get("/addresses", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAddresses(data);
+      if (data.length > 0) {
+        setSelectedAddressId(data[0].id);
+      } else {
+        setSelectedAddressId("new");
+      }
+    } catch (err) {
+      console.error("Failed to fetch addresses", err);
+    }
+  };
+
   const subtotal = getTotal();
-  const shipping = subtotal > 150 ? 0 : 25;
+  const shipping = deliveryMethod === "EXPRESS" ? 15 : 0;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
@@ -75,7 +163,33 @@ export default function CheckoutPage() {
 
       formData.append("items", JSON.stringify(orderItems));
       formData.append("paymentMethod", paymentMethod);
-      formData.append("shippingAddress", shippingAddress);
+      
+      formData.append("deliveryMethod", deliveryMethod);
+      formData.append("shippingFee", String(shipping));
+      formData.append("totalAmount", String(total));
+
+      if (selectedAddressId === "new") {
+        if (!newAddress.line1 || !newAddress.city) {
+          setError("Please provide a complete shipping address.");
+          setLoading(false);
+          return;
+        }
+        // Append structured address fields
+        formData.append("name", newAddress.name);
+        formData.append("line1", newAddress.line1);
+        formData.append("city", newAddress.city);
+        formData.append("state", newAddress.state);
+        formData.append("zip", newAddress.zip);
+        formData.append("country", newAddress.country);
+        formData.append("saveAddress", String(saveAddress));
+      } else {
+        if (!selectedAddressId) {
+          setError("Please select an address.");
+          setLoading(false);
+          return;
+        }
+        formData.append("addressId", selectedAddressId);
+      }
 
       if (paymentMethod === "BANK_TRANSFER") {
         if (!screenshot) {
@@ -86,7 +200,7 @@ export default function CheckoutPage() {
         formData.append("paymentScreenshot", screenshot);
       }
 
-      // Failsafe token retrieval for production reliability
+      // Failsafe token retrieval
       const localStorageData = typeof window !== 'undefined' ? localStorage.getItem('clothing-auth-storage') : null;
       let finalToken = currentToken;
       if (!finalToken && localStorageData) {
@@ -147,22 +261,231 @@ export default function CheckoutPage() {
                   <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Shipping Information</h2>
                 </div>
                 
-                <div className="glass-dark rounded-[32px] p-8 border border-white/5 space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Delivery Address</label>
-                    <textarea
-                      required
-                      placeholder="Street address, apartment, city, and postal code..."
-                      className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:border-brand-indigo/50 transition-all min-h-[120px]"
-                      value={shippingAddress}
-                      onChange={(e) => setShippingAddress(e.target.value)}
-                    />
+                <div className="glass-dark rounded-[32px] p-8 border border-white/5 space-y-8">
+                  {/* Saved Addresses List */}
+                  {addresses.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {addresses.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => setSelectedAddressId(addr.id)}
+                          className={`relative flex flex-col items-start p-6 rounded-2xl border transition-all text-left ${
+                            selectedAddressId === addr.id 
+                              ? "bg-brand-indigo/10 border-brand-indigo/50 text-white" 
+                              : "bg-surface-950/50 border-white/5 text-slate-500 hover:border-white/10"
+                          }`}
+                        >
+                          <span className="font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <MapPin size={12} /> {addr.name}
+                          </span>
+                          <span className="text-[10px] leading-relaxed opacity-80">
+                            {addr.line1}, {addr.city}
+                          </span>
+                          {selectedAddressId === addr.id && <CheckCircle2 className="absolute top-4 right-4 text-brand-indigo" size={16} />}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAddressId("new")}
+                        className={`relative flex flex-col items-center justify-center p-6 rounded-2xl border transition-all text-center ${
+                          selectedAddressId === "new" 
+                            ? "bg-brand-indigo/10 border-brand-indigo/50 text-white" 
+                            : "bg-surface-950/50 border-white/5 text-slate-500 border-dashed hover:border-white/20"
+                        }`}
+                      >
+                        <Plus size={20} className="mb-2" />
+                        <span className="font-bold text-[10px] uppercase tracking-widest">New Address</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Manual Entry or New Address */}
+                  {(selectedAddressId === "new" || addresses.length === 0) && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-6 pt-4 border-t border-white/5"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Address Label</label>
+                          <input
+                            required
+                            placeholder="Home, Office..."
+                            className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-bold uppercase tracking-widest"
+                            value={newAddress.name}
+                            onChange={(e) => setNewAddress({...newAddress, name: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2 relative country-dropdown-container">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Country</label>
+                          <div className="relative">
+                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                            <input
+                              required
+                              placeholder="Search country..."
+                              className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-bold uppercase tracking-widest"
+                              value={countrySearch || newAddress.country}
+                              onFocus={() => setShowCountryList(true)}
+                              onChange={(e) => {
+                                setCountrySearch(e.target.value);
+                                setShowCountryList(true);
+                              }}
+                            />
+                            <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-transform ${showCountryList ? 'rotate-180' : ''}`} size={14} />
+                          </div>
+
+                          <AnimatePresence>
+                            {showCountryList && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="absolute z-50 left-0 right-0 top-full mt-2 max-h-60 overflow-y-auto glass-dark border border-white/10 rounded-2xl p-2 custom-scrollbar shadow-2xl"
+                              >
+                                {filteredCountries.length > 0 ? (
+                                  filteredCountries.map((country) => (
+                                    <button
+                                      key={country}
+                                      type="button"
+                                      onClick={() => {
+                                        setNewAddress({...newAddress, country});
+                                        setCountrySearch(country);
+                                        setShowCountryList(false);
+                                      }}
+                                      className="w-full text-left px-4 py-3 rounded-xl text-[10px] font-bold text-slate-300 uppercase tracking-widest hover:bg-brand-indigo/20 hover:text-white transition-all flex items-center justify-between group"
+                                    >
+                                      {country}
+                                      {newAddress.country === country && <Check size={12} className="text-brand-indigo" />}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-3 text-[10px] font-bold text-slate-600 uppercase tracking-widest italic">No results found</div>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Street Address</label>
+                        <input
+                          required
+                          placeholder="House number and street name..."
+                          className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-medium"
+                          value={newAddress.line1}
+                          onChange={(e) => setNewAddress({...newAddress, line1: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">City</label>
+                          <input
+                            required
+                            className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-medium"
+                            value={newAddress.city}
+                            onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">State</label>
+                          <input
+                            required
+                            className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-medium"
+                            value={newAddress.state}
+                            onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Postal Code</label>
+                          <input
+                            required
+                            className="w-full bg-surface-950/50 border border-white/5 rounded-2xl py-4 px-6 text-xs text-white focus:outline-none focus:border-brand-indigo/50 transition-all font-mono tracking-widest"
+                            value={newAddress.zip}
+                            onChange={(e) => setNewAddress({...newAddress, zip: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      {isAuthenticated && (
+                        <div className="flex items-center gap-3 px-1 pt-4 border-t border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => setSaveAddress(!saveAddress)}
+                            className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all ${
+                              saveAddress ? "bg-brand-indigo border-brand-indigo" : "bg-transparent border-white/20"
+                            }`}
+                          >
+                            {saveAddress && <Check size={12} className="text-white" />}
+                          </button>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer" onClick={() => setSaveAddress(!saveAddress)}>
+                            Save this address for future acquisitions
+                          </span>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </section>
+
+              {/* Delivery Section */}
+              <section className={`space-y-8 transition-all duration-500 ${!isAddressComplete ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 glass rounded-xl flex items-center justify-center text-brand-indigo">
+                      <Truck size={20} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Delivery Choice</h2>
                   </div>
+                  {!isAddressComplete && (
+                    <span className="text-[10px] font-bold text-brand-rose uppercase tracking-widest flex items-center gap-2">
+                       <AlertCircle size={12} /> Fill address to select
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod("STANDARD")}
+                    className={`relative flex flex-col items-start p-6 rounded-[24px] border transition-all text-left ${
+                      deliveryMethod === "STANDARD" 
+                        ? "bg-brand-indigo/10 border-brand-indigo/50 text-white" 
+                        : "bg-surface-950/50 border-white/5 text-slate-500 hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex justify-between w-full mb-4">
+                      <span className="font-bold text-xs uppercase tracking-[0.2em]">Standard</span>
+                      <span className="text-xs font-black text-brand-indigo italic tracking-tighter">FREE</span>
+                    </div>
+                    <p className="text-[10px] opacity-60 leading-relaxed font-medium">3-5 Business Days. Reliable for your everyday essentials.</p>
+                    {deliveryMethod === "STANDARD" && <CheckCircle2 className="absolute -top-2 -right-2 text-brand-indigo bg-surface-950 rounded-full" size={24} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod("EXPRESS")}
+                    className={`relative flex flex-col items-start p-6 rounded-[24px] border transition-all text-left ${
+                      deliveryMethod === "EXPRESS" 
+                        ? "bg-brand-indigo/10 border-brand-indigo/50 text-white" 
+                        : "bg-surface-950/50 border-white/5 text-slate-500 hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex justify-between w-full mb-4">
+                      <span className="font-bold text-xs uppercase tracking-[0.2em]">Express</span>
+                      <span className="text-xs font-black text-brand-indigo italic tracking-tighter"><FormattedPrice amount={15} /></span>
+                    </div>
+                    <p className="text-[10px] opacity-60 leading-relaxed font-medium">1-2 Business Days. Priority handling for the visionary pace.</p>
+                    {deliveryMethod === "EXPRESS" && <CheckCircle2 className="absolute -top-2 -right-2 text-brand-indigo bg-surface-950 rounded-full" size={24} />}
+                  </button>
                 </div>
               </section>
 
               {/* Payment Section */}
-              <section className="space-y-8">
+              <section className={`space-y-8 transition-all duration-500 ${!isAddressComplete ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 glass rounded-xl flex items-center justify-center text-brand-indigo">
                     <CreditCard size={20} />
@@ -183,7 +506,7 @@ export default function CheckoutPage() {
                     >
                       <Banknote className="mb-4" size={24} />
                       <span className="font-bold text-sm uppercase tracking-widest mb-1">Cash on Delivery</span>
-                      <span className="text-[10px] opacity-60">Pay when your order arrives.</span>
+                      <span className="text-[10px] opacity-60 font-medium">Pay when your order arrives.</span>
                       {paymentMethod === "COD" && <CheckCircle2 className="absolute top-4 right-4 text-brand-indigo" size={20} />}
                     </button>
 
@@ -198,7 +521,7 @@ export default function CheckoutPage() {
                     >
                       <CreditCard className="mb-4" size={24} />
                       <span className="font-bold text-sm uppercase tracking-widest mb-1">Direct Bank Transfer</span>
-                      <span className="text-[10px] opacity-60">Instant verification via screenshot.</span>
+                      <span className="text-[10px] opacity-60 font-medium">Instant verification via screenshot.</span>
                       {paymentMethod === "BANK_TRANSFER" && <CheckCircle2 className="absolute top-4 right-4 text-brand-indigo" size={20} />}
                     </button>
                   </div>
@@ -276,7 +599,9 @@ export default function CheckoutPage() {
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">Qty: {item.quantity}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-black text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="text-sm font-black text-white">
+                      <FormattedPrice amount={item.price * item.quantity} />
+                    </span>
                   </div>
                 ))}
               </div>
@@ -284,15 +609,21 @@ export default function CheckoutPage() {
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 uppercase font-bold tracking-widest">Subtotal</span>
-                  <span className="text-white">${subtotal.toFixed(2)}</span>
+                  <span className="text-white">
+                    <FormattedPrice amount={subtotal} />
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 uppercase font-bold tracking-widest">Shipping</span>
-                  <span className="text-white">{shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}</span>
+                  <span className="text-white">
+                    {shipping === 0 ? "FREE" : <FormattedPrice amount={shipping} />}
+                  </span>
                 </div>
                 <div className="flex justify-between pt-4 border-t border-white/10">
                   <span className="text-lg font-bold text-white uppercase tracking-tighter">Amount Due</span>
-                  <span className="text-3xl font-black text-brand-indigo">${total.toFixed(2)}</span>
+                  <span className="text-3xl font-black text-brand-indigo">
+                    <FormattedPrice amount={total} />
+                  </span>
                 </div>
               </div>
 

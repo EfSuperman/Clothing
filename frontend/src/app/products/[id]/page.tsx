@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { ArrowLeft, ShoppingCart, Check, Shield, Truck, RotateCcw, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Check, Shield, Truck, RotateCcw, Minus, Plus, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/cartStore";
+import { FormattedPrice } from "@/components/FormattedPrice";
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [showCheckoutBtn, setShowCheckoutBtn] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -57,7 +60,11 @@ export default function ProductDetailPage() {
       quantity: quantity,
       imageURL: product.imageURLs[0] || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800",
     });
-    setTimeout(() => setAdding(false), 1500);
+    
+    setTimeout(() => {
+      setAdding(false);
+      setShowCheckoutBtn(true);
+    }, 1200);
   };
 
   if (loading) {
@@ -157,7 +164,9 @@ export default function ProductDetailPage() {
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-6">
-                  <p className="text-4xl font-black text-brand-indigo">${product.price}</p>
+                  <p className="text-4xl font-black text-brand-indigo">
+                    <FormattedPrice amount={product.price} />
+                  </p>
                   <div className="h-6 w-[1px] bg-white/10" />
                   <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
                     product.stockQty > 0 ? "text-brand-cyan" : "text-brand-rose"
@@ -200,37 +209,53 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={handleAddToCart}
-                  disabled={product.stockQty <= 0 || adding}
-                  className={`group relative w-full py-6 rounded-[20px] font-black text-sm tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 overflow-hidden ${
-                    adding 
-                      ? "bg-brand-cyan text-surface-950" 
-                      : "bg-white text-black hover:scale-[1.02] active:scale-[0.98]"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <AnimatePresence mode="wait">
-                    {adding ? (
-                      <motion.div
-                        key="added"
-                        initial={{ opacity: 0, y: 10 }}
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={product.stockQty <= 0 || adding}
+                    className={`group relative w-full py-6 rounded-[20px] font-black text-sm tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 overflow-hidden ${
+                      adding 
+                        ? "bg-brand-cyan text-surface-950" 
+                        : "bg-white text-black hover:scale-[1.02] active:scale-[0.98]"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <AnimatePresence mode="wait">
+                      {adding ? (
+                        <motion.div
+                          key="added"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-2"
+                        >
+                          <Check size={20} /> ADDED TO CART
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="idle"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-2"
+                        >
+                          <ShoppingCart size={20} /> ADD TO BAG
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </button>
+
+                  <AnimatePresence>
+                    {(showCheckoutBtn || items.length > 0) && (
+                      <motion.button
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2"
+                        exit={{ opacity: 0, y: 20 }}
+                        onClick={() => router.push("/checkout")}
+                        className="w-full py-5 rounded-[20px] bg-brand-indigo text-white font-black text-sm tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 hover:bg-brand-indigo/90 active:scale-95 shadow-xl shadow-brand-indigo/20 border border-white/10"
                       >
-                        <Check size={20} /> ADDED TO CART
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="idle"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2"
-                      >
-                        <ShoppingCart size={20} /> ADD TO BAG
-                      </motion.div>
+                        <CreditCard size={18} /> PROCEED TO CHECKOUT
+                      </motion.button>
                     )}
                   </AnimatePresence>
-                </button>
+                </div>
               </div>
 
               {/* Features */}

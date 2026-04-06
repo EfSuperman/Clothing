@@ -50,7 +50,20 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    let { items, paymentMethod, shippingAddress } = req.body;
+    let { 
+      items, 
+      paymentMethod, 
+      shippingAddress, 
+      addressId, 
+      saveAddress,
+      // Structured address fields for new addresses
+      name,
+      line1,
+      city,
+      state,
+      zip,
+      country 
+    } = req.body;
     
     // Parse items if they are sent as a JSON string (typical for multipart/form-data)
     if (typeof items === 'string') {
@@ -76,13 +89,36 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     let paymentScreenshot = null;
     let paymentStatus: 'PENDING' | 'VERIFICATION_PENDING' = 'PENDING';
 
-    // Handle bank transfer screenshot (now uploaded to Cloudinary via multer middleware)
+    // Handle bank transfer screenshot
     if (paymentMethod === 'BANK_TRANSFER' && req.file) {
-      // Cloudinary multer stores the URL in req.file.path
       paymentScreenshot = (req.file as any).path;
       paymentStatus = 'VERIFICATION_PENDING';
     } else if (paymentMethod === 'BANK_TRANSFER' && !req.file) {
       res.status(400).json({ message: 'Payment screenshot is required for Bank Transfer' });
+      return;
+    }
+
+    // Handle Address
+    let finalAddressId = addressId;
+
+    if (!finalAddressId && (shippingAddress || line1)) {
+      // Create new Address with structured fields
+      const newAddress = await prisma.address.create({
+        data: {
+          userId: saveAddress === 'true' || saveAddress === true ? userId : null,
+          name: name || 'Order Address',
+          line1: line1 || shippingAddress || 'Unknown Street',
+          city: city || 'Unknown City',
+          state: state || 'Unknown State',
+          zip: zip || '00000',
+          country: country || 'Pakistan',
+        }
+      });
+      finalAddressId = newAddress.id;
+    }
+
+    if (!finalAddressId) {
+      res.status(400).json({ message: 'Shipping address is required' });
       return;
     }
 
@@ -93,6 +129,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         paymentMethod,
         paymentStatus,
         paymentScreenshot,
+        shippingAddressId: finalAddressId,
         orderItems: {
           create: orderItemsData,
         },

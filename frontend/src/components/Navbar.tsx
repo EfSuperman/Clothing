@@ -95,7 +95,7 @@ const Navbar = () => {
 
             {user ? (
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/orders" className="text-slate-300 hover:text-white transition-colors">
+                <Link href="/profile" className="text-slate-300 hover:text-white transition-colors">
                   <User size={22} />
                 </Link>
                 <button 
@@ -156,9 +156,16 @@ const Navbar = () => {
               {user && (
                 <>
                   <Link
+                    href="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="block text-lg font-medium text-slate-300 hover:text-brand-indigo uppercase tracking-widest"
+                  >
+                    My Profile
+                  </Link>
+                  <Link
                     href="/orders"
                     onClick={() => setIsOpen(false)}
-                    className="block text-lg font-medium text-slate-300 hover:text-brand-indigo"
+                    className="block text-lg font-medium text-slate-300 hover:text-brand-indigo uppercase tracking-widest"
                   >
                     My Orders
                   </Link>
