@@ -27,26 +27,38 @@ function baseTemplate(title: string, content: string): string {
   return `
   <!DOCTYPE html>
   <html>
-  <head><meta charset="utf-8"></head>
-  <body style="margin:0; padding:0; background-color:${BG_COLOR}; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <div style="max-width:600px; margin:0 auto; padding:40px 20px;">
-      <!-- Header -->
-      <div style="text-align:center; margin-bottom:40px;">
-        <h1 style="font-size:28px; font-weight:900; letter-spacing:0.2em; color:#ffffff; margin:0;">VISION</h1>
-        <p style="font-size:9px; letter-spacing:0.3em; color:${BRAND_COLOR}; text-transform:uppercase; font-weight:700; margin:4px 0 0 0;">Beyond the Visible</p>
-      </div>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISION Notification</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:${BG_COLOR}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:${BG_COLOR};">
+      <tr>
+        <td align="center" style="padding: 20px 10px;">
+          <div style="max-width:600px; width: 100%; margin:0 auto;">
+            <!-- Header -->
+            <div style="text-align:center; margin-bottom:30px; padding: 20px 0;">
+              <h1 style="font-size:24px; font-weight:900; letter-spacing:0.2em; color:#ffffff; margin:0; text-transform: uppercase;">VISION</h1>
+              <p style="font-size:8px; letter-spacing:0.3em; color:${BRAND_COLOR}; text-transform:uppercase; font-weight:700; margin:4px 0 0 0;">Beyond the Visible</p>
+            </div>
 
-      <!-- Content Card -->
-      <div style="background: rgba(15,23,42,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius:24px; padding:40px; margin-bottom:30px;">
-        <h2 style="color:#fff; font-size:22px; font-weight:700; margin:0 0 20px 0;">${title}</h2>
-        ${content}
-      </div>
+            <!-- Content Card -->
+            <div style="background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius:16px; padding:25px; margin-bottom:20px; text-align: left;">
+              <h2 style="color:#fff; font-size:20px; font-weight:700; margin:0 0 15px 0;">${title}</h2>
+              <div style="color:${TEXT_COLOR}; font-size:14px; line-height:1.6;">
+                ${content}
+              </div>
+            </div>
 
-      <!-- Footer -->
-      <div style="text-align:center; padding:20px 0;">
-        <p style="color:${MUTED_COLOR}; font-size:12px; margin:0;">© ${new Date().getFullYear()} VISION — Beyond the Visible. All rights reserved.</p>
-      </div>
-    </div>
+            <!-- Footer -->
+            <div style="text-align:center; padding:15px 0;">
+              <p style="color:${MUTED_COLOR}; font-size:11px; margin:0;">© ${new Date().getFullYear()} VISION — Beyond the Visible. All rights reserved.</p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
   </body>
   </html>`;
 }
@@ -62,35 +74,35 @@ export async function sendOrderConfirmationEmail(
   paymentMethod: string
 ): Promise<void> {
   const content = `
-    <p style="color:${TEXT_COLOR}; font-size:15px; line-height:1.6; margin:0 0 24px 0;">
+    <p style="margin:0 0 20px 0;">
       Dear <strong>${customerName}</strong>,<br/>
       Thank you for your order. Your acquisition has been recorded successfully.
     </p>
-    <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:20px; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse;">
+    <div style="background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:20px; margin-bottom:20px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Order ID</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${orderId.slice(0, 8)}...</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Order ID</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">#${orderId.slice(0, 8)}</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Items</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${itemCount} piece(s)</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Items</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${itemCount} unit(s)</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Total</td>
-          <td style="padding:8px 0; color:${BRAND_COLOR}; font-size:18px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Total</td>
+          <td style="padding:5px 0; color:${BRAND_COLOR}; font-size:16px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer (Under Review)' : 'Cash on Delivery'}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' : 'Cash on Delivery'}</td>
         </tr>
       </table>
     </div>
     ${paymentMethod === 'BANK_TRANSFER' ? `
-    <p style="color:${MUTED_COLOR}; font-size:13px; line-height:1.6; margin:0;">
-      🔄 Your payment screenshot has been received and is awaiting admin verification. You will receive another email once your payment has been reviewed.
+    <p style="color:${MUTED_COLOR}; font-size:12px; line-height:1.5; margin:0;">
+      🔄 Your payment screenshot is awaiting admin verification. You will receive another update once confirmed.
     </p>` : `
-    <p style="color:${MUTED_COLOR}; font-size:13px; line-height:1.6; margin:0;">
+    <p style="color:${MUTED_COLOR}; font-size:12px; line-height:1.5; margin:0;">
       📦 Your order is being prepared and will be shipped soon!
     </p>`}
   `;
@@ -123,14 +135,14 @@ export async function sendPaymentStatusEmail(
     : 'Unfortunately, your bank transfer could not be verified. Please contact our support team for assistance or place a new order.';
 
   const content = `
-    <p style="color:${TEXT_COLOR}; font-size:15px; line-height:1.6; margin:0 0 24px 0;">
+    <p style="margin:0 0 20px 0;">
       Dear <strong>${customerName}</strong>,
     </p>
-    <div style="text-align:center; padding:24px; background:rgba(${isVerified ? '34,197,94' : '239,68,68'},0.1); border:1px solid rgba(${isVerified ? '34,197,94' : '239,68,68'},0.2); border-radius:16px; margin-bottom:24px;">
-      <p style="font-size:20px; font-weight:900; color:${statusColor}; margin:0 0 8px 0;">${statusText}</p>
-      <p style="font-size:12px; color:${MUTED_COLOR}; margin:0;">Order #${orderId.slice(0, 8)} — $${totalAmount.toFixed(2)}</p>
+    <div style="text-align:center; padding:20px; background-color:rgba(${isVerified ? '34,197,94' : '239,68,68'},0.1); border:1px solid rgba(${isVerified ? '34,197,94' : '239,68,68'},0.2); border-radius:12px; margin-bottom:20px;">
+      <p style="font-size:18px; font-weight:900; color:${statusColor}; margin:0 0 5px 0;">${statusText}</p>
+      <p style="font-size:11px; color:${MUTED_COLOR}; margin:0;">Order #${orderId.slice(0, 8)} — $${totalAmount.toFixed(2)}</p>
     </div>
-    <p style="color:${MUTED_COLOR}; font-size:14px; line-height:1.6; margin:0;">
+    <p style="color:${MUTED_COLOR}; font-size:13px; line-height:1.6; margin:0;">
       ${statusMessage}
     </p>
   `;
@@ -156,35 +168,31 @@ export async function sendAdminOrderNotificationEmail(
   paymentMethod: string
 ): Promise<void> {
   const content = `
-    <p style="color:${TEXT_COLOR}; font-size:15px; line-height:1.6; margin:0 0 24px 0;">
+    <p style="margin:0 0 20px 0;">
       A new order has been placed on <strong>VISION</strong>.
     </p>
-    <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:24px;">
-      <table style="width:100%; border-collapse:collapse;">
+    <div style="background-color:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Order ID</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">#${orderId.slice(0, 8)}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Order ID</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">#${orderId.slice(0, 8)}</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Customer</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${customerName}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Customer</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${customerName}</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Email</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${customerEmail}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Amount</td>
+          <td style="padding:5px 0; color:${BRAND_COLOR}; font-size:16px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
         </tr>
         <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Amount</td>
-          <td style="padding:8px 0; color:${BRAND_COLOR}; font-size:18px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
-        </tr>
-        <tr>
-          <td style="padding:8px 0; color:${MUTED_COLOR}; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
-          <td style="padding:8px 0; color:#fff; font-size:14px; text-align:right; font-weight:700;">${paymentMethod}</td>
+          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${paymentMethod}</td>
         </tr>
       </table>
     </div>
     <div style="text-align:center;">
-      <a href="https://vision-vsn.vercel.app/admin/orders" style="display:inline-block; padding:12px 24px; background:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:12px; font-weight:bold; font-size:14px;">VIEW ORDER IN DASHBOARD</a>
+      <a href="https://vision-vsn.vercel.app/admin/orders" style="display:inline-block; padding:12px 20px; background-color:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:10px; font-weight:bold; font-size:12px;">VIEW ORDER IN DASHBOARD</a>
     </div>
   `;
 
