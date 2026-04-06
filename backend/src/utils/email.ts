@@ -2,18 +2,26 @@ import nodemailer from 'nodemailer';
 
 // Create reusable Gmail transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // Use SSL
   auth: {
     user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_APP_PASSWORD,
+    pass: process.env.SMTP_APP_PASSWORD?.replace(/\s/g, ''), // Ensure no spaces
   },
+  tls: {
+    rejectUnauthorized: false // Helps in some local development environments
+  }
 });
 
-// Verify transporter on startup (non-blocking)
-transporter.verify().then(() => {
-  console.log('✅ Email service connected (Gmail SMTP)');
-}).catch((err) => {
-  console.warn('⚠️ Email service not available:', err.message);
+// Verify transporter on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email service failed to connect:', error.message);
+    console.error('Check your SMTP_EMAIL and SMTP_APP_PASSWORD in .env');
+  } else {
+    console.log('✅ Email service connected and ready (Gmail SMTP)');
+  }
 });
 
 // ─── Email Templates ────────────────────────────────────────────────
@@ -30,21 +38,27 @@ function baseTemplate(title: string, content: string): string {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      @media only screen and (max-width: 600px) {
+        .container { width: 100% !important; border-radius: 0 !important; }
+        .content { padding: 20px !important; }
+      }
+    </style>
     <title>VISION Notification</title>
   </head>
   <body style="margin:0; padding:0; background-color:${BG_COLOR}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:${BG_COLOR};">
       <tr>
-        <td align="center" style="padding: 20px 10px;">
-          <div style="max-width:600px; width: 100%; margin:0 auto;">
+        <td align="center" style="padding: 10px;">
+          <div class="container" style="max-width:600px; width: 100%; margin:0 auto; text-align: left;">
             <!-- Header -->
-            <div style="text-align:center; margin-bottom:30px; padding: 20px 0;">
-              <h1 style="font-size:24px; font-weight:900; letter-spacing:0.2em; color:#ffffff; margin:0; text-transform: uppercase;">VISION</h1>
-              <p style="font-size:8px; letter-spacing:0.3em; color:${BRAND_COLOR}; text-transform:uppercase; font-weight:700; margin:4px 0 0 0;">Beyond the Visible</p>
+            <div style="text-align:center; padding: 40px 0 30px 0;">
+              <h1 style="font-size:28px; font-weight:900; letter-spacing:0.25em; color:#ffffff; margin:0; text-transform: uppercase; font-style: italic;">VISION</h1>
+              <p style="font-size:9px; letter-spacing:0.4em; color:${BRAND_COLOR}; text-transform:uppercase; font-weight:700; margin:6px 0 0 0;">Beyond the Visible</p>
             </div>
 
             <!-- Content Card -->
-            <div style="background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius:16px; padding:25px; margin-bottom:20px; text-align: left;">
+            <div class="content" style="background-color: #0f172a; border: 1px solid rgba(255,255,255,0.08); border-radius:32px; padding:40px; margin-bottom:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
               <h2 style="color:#fff; font-size:20px; font-weight:700; margin:0 0 15px 0;">${title}</h2>
               <div style="color:${TEXT_COLOR}; font-size:14px; line-height:1.6;">
                 ${content}
@@ -108,15 +122,16 @@ export async function sendOrderConfirmationEmail(
   `;
 
   try {
+    console.log(`📧 Attempting to send order confirmation to: ${to}...`);
     await transporter.sendMail({
       from: `"VISION Store" <${process.env.SMTP_EMAIL}>`,
       to,
       subject: `VISION — Order Confirmation #${orderId.slice(0, 8)}`,
       html: baseTemplate('Order Confirmed ✨', content),
     });
-    console.log(`📧 Order confirmation email sent to ${to}`);
-  } catch (error) {
-    console.error('Failed to send order confirmation email:', error);
+    console.log(`✅ Order confirmation email sent to ${to}`);
+  } catch (error: any) {
+    console.error('❌ Failed to send order confirmation email:', error.message);
   }
 }
 
@@ -148,15 +163,16 @@ export async function sendPaymentStatusEmail(
   `;
 
   try {
+    console.log(`📧 Attempting to send payment status update to: ${to}...`);
     await transporter.sendMail({
       from: `"VISION Store" <${process.env.SMTP_EMAIL}>`,
       to,
       subject: `VISION — Payment ${isVerified ? 'Verified' : 'Update'} for Order #${orderId.slice(0, 8)}`,
       html: baseTemplate(statusText, content),
     });
-    console.log(`📧 Payment status email sent to ${to} (${status})`);
-  } catch (error) {
-    console.error('Failed to send payment status email:', error);
+    console.log(`✅ Payment status email sent to ${to} (${status})`);
+  } catch (error: any) {
+    console.error('❌ Failed to send payment status email:', error.message);
   }
 }
 
@@ -197,14 +213,33 @@ export async function sendAdminOrderNotificationEmail(
   `;
 
   try {
+    console.log(`📧 Attempting to send admin notification for order ${orderId}...`);
     await transporter.sendMail({
       from: `"VISION System" <${process.env.SMTP_EMAIL}>`,
       to: process.env.SMTP_EMAIL, // Send to the store owner
       subject: `🚨 NEW ORDER: #${orderId.slice(0, 8)} - $${totalAmount.toFixed(2)}`,
       html: baseTemplate('New Order Received 📦', content),
     });
-    console.log(`📧 Admin notification sent for order ${orderId}`);
-  } catch (error) {
-    console.error('Failed to send admin notification email:', error);
+    console.log(`✅ Admin notification sent for order ${orderId}`);
+  } catch (error: any) {
+    console.error('❌ Failed to send admin notification email:', error.message);
+  }
+}
+
+export async function sendTestEmail(to: string): Promise<boolean> {
+  try {
+    console.log(`📧 Attempting to send test email to: ${to}...`);
+    await transporter.sendMail({
+      from: `"VISION System" <${process.env.SMTP_EMAIL}>`,
+      to,
+      subject: 'VISION — SMTP Connection Test',
+      text: 'SUCCESS: Your SMTP configuration is working correctly.',
+      html: baseTemplate('Verification Success ✅', '<p>Congratulations! Your SMTP configuration is correctly authenticated and ready to send notifications.</p>')
+    });
+    console.log(`✅ Test email sent to ${to}`);
+    return true;
+  } catch (error: any) {
+    console.error('❌ SMTP Test Failed:', error.message);
+    return false;
   }
 }

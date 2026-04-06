@@ -62,7 +62,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       city,
       state,
       zip,
-      country 
+      country,
+      phone 
     } = req.body;
     
     // Parse items if they are sent as a JSON string (typical for multipart/form-data)
@@ -112,6 +113,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
           state: state || 'Unknown State',
           zip: zip || '00000',
           country: country || 'Pakistan',
+          phone: phone || null,
         }
       });
       finalAddressId = newAddress.id;
@@ -198,7 +200,8 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
   try {
     const orders = await prisma.order.findMany({
       include: {
-        user: { select: { name: true, email: true } },
+        user: { select: { name: true, email: true, phone: true } },
+        shippingAddress: true,
         orderItems: { include: { product: true } },
       },
       orderBy: { createdAt: 'desc' },

@@ -38,6 +38,8 @@ model User {
   id           String      @id @default(uuid())
   name         String?
   email        String?     @unique
+  phone        String?     // For mobile contact
+  googleId     String?     @unique // For Social Login
   passwordHash String?
   role         Role        @default(USER)
   isGuest      Boolean     @default(false)
@@ -61,6 +63,7 @@ model Address {
   state     String
   zip       String
   country   String
+  phone     String?  // Shipping phone number
 
   orders    Order[]
 }
