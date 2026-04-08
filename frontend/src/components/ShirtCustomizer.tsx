@@ -3,13 +3,13 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import api from "@/lib/api";
-import { 
-  OrbitControls, 
-  Center, 
-  useGLTF, 
-  Decal, 
-  Float, 
-  Sphere 
+import {
+  OrbitControls,
+  Center,
+  useGLTF,
+  Decal,
+  Float,
+  Sphere
 } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
@@ -80,9 +80,17 @@ function Shirt({ color, decalUrl }: { color: string; decalUrl: string | null }) 
 }
 
 export default function ShirtCustomizer() {
-  const [currentColor, setCurrentColor] = useState(COLORS[0].value);
+  const [currentColor, setCurrentColor] = useState(COLORS[1].value);
   const [selectedDesign, setSelectedDesign] = useState<string>("none");
   const [designs, setDesigns] = useState(DEFAULT_DESIGNS);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchDecals = async () => {
@@ -104,9 +112,31 @@ export default function ShirtCustomizer() {
   const decalUrl = designs.find(d => d.id === selectedDesign)?.url || null;
 
   return (
-    <section id="customizer" className="relative w-full min-h-[100dvh] bg-surface-950 flex flex-col md:flex-row pt-20">
-      <div className="flex-1 relative order-1 h-[55vh] md:h-auto min-h-[400px]">
-        <Canvas shadows camera={{ position: [0, 0, 2.5], fov: 25 }} gl={{ preserveDrawingBuffer: true, alpha: true }}>
+    <section id="customizer" className="relative w-full min-h-[100dvh] bg-surface-950 flex flex-col md:flex-row pt-28 md:pt-20 overflow-x-hidden">
+      <div className="flex-1 relative order-1 h-[40vh] md:h-auto min-h-[300px] px-8 md:px-0">
+        <div className="absolute inset-0 z-0 pointer-events-none touch-none" style={{ touchAction: 'pan-y' }} />
+
+        {/* Stationary Background Text */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-[20vw] md:text-[12vw] font-black text-white/[0.03] uppercase tracking-tighter leading-none"
+          >
+            VISION
+          </motion.h1>
+        </div>
+
+        <Canvas
+          shadows
+          camera={{
+            position: isMobile ? [0, 0, 1] : [0, 0, 2.5],
+            fov: isMobile ? 35 : 25
+          }}
+          gl={{ preserveDrawingBuffer: true, alpha: true }}
+          style={{ touchAction: 'pan-y' }}
+        >
           <ambientLight intensity={0.8} />
           <pointLight position={[10, 10, 10]} intensity={1} />
           <Suspense fallback={<VisionaryCore color={currentColor} decalUrl={decalUrl} />}>
@@ -114,7 +144,14 @@ export default function ShirtCustomizer() {
               <Center><Shirt color={currentColor} decalUrl={decalUrl} /></Center>
             </SceneErrorBoundary>
           </Suspense>
-          <OrbitControls enablePan={false} enableZoom={true} minPolarAngle={Math.PI/4} maxPolarAngle={Math.PI/2} />
+          <OrbitControls
+            makeDefault
+            enablePan={false}
+            enableZoom={isMobile ? false : true}
+            minPolarAngle={Math.PI / 4}
+            maxPolarAngle={Math.PI / 2}
+            enableDamping
+          />
         </Canvas>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 glass-dark rounded-full border border-white/5 pointer-events-none">
           <RotateCcw size={14} className="text-brand-indigo animate-spin-slow" />
@@ -122,7 +159,7 @@ export default function ShirtCustomizer() {
         </div>
       </div>
 
-      <div className="w-full md:w-[500px] p-6 md:p-12 z-10 order-2 flex flex-col justify-center bg-surface-950/80 md:bg-surface-950 backdrop-blur-3xl border-t md:border-t-0 md:border-l border-white/5 pb-24 md:pb-12 h-auto max-h-[50vh] md:max-h-full overflow-y-auto">
+      <div className="w-full md:w-[500px] p-6 md:p-12 z-10 order-2 flex flex-col justify-center bg-surface-950/80 md:bg-surface-950 backdrop-blur-3xl border-t md:border-t-0 md:border-l border-white/5 pb-24 md:pb-12 h-auto md:max-h-full">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="space-y-8 md:space-y-12">
           <div className="space-y-4 text-center md:text-left">
             <h3 className="text-brand-indigo font-black text-xs uppercase tracking-[0.4em]">Studio Customizer</h3>
@@ -148,7 +185,7 @@ export default function ShirtCustomizer() {
             ))}
           </div>
           <button className="w-full bg-white text-black font-black py-5 rounded-[2rem] text-xs uppercase tracking-[0.3em] hover:bg-brand-indigo hover:text-white transition-all shadow-2xl">
-             Lock In Selection <Box size={14} className="inline ml-2" />
+            Lock In Selection <Box size={14} className="inline ml-2" />
           </button>
         </motion.div>
       </div>
