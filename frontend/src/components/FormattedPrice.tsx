@@ -5,9 +5,10 @@ interface FormattedPriceProps {
   amount: number;
   className?: string;
   showCurrency?: boolean;
+  customSymbol?: string;
 }
 
-export const FormattedPrice = ({ amount, className, showCurrency = true }: FormattedPriceProps) => {
+export const FormattedPrice = ({ amount, className, showCurrency = true, customSymbol }: FormattedPriceProps) => {
   const { currency, symbol, rate, loading, detectAndSetCurrency } = useCurrencyStore();
   const [mounted, setMounted] = useState(false);
 
@@ -20,6 +21,10 @@ export const FormattedPrice = ({ amount, className, showCurrency = true }: Forma
   }, []);
 
   if (!mounted) return null;
+
+  if (customSymbol) {
+    return <span className={className}>{customSymbol}{Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+  }
 
   const convertedAmount = amount * rate;
   

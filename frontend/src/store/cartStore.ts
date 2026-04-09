@@ -7,13 +7,14 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageURL: string;
+  customDesignUrl?: string;
 }
 
 interface CartState {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, customDesignUrl?: string) => void;
+  updateQuantity: (productId: string, customDesignUrl: string | undefined, quantity: number) => void;
   clearCart: () => void;
   getTotal: () => number;
 }
@@ -24,11 +25,14 @@ export const useCartStore = create<CartState>()(
       items: [],
       addItem: (newItem) => {
         const { items } = get();
-        const existingItem = items.find((item) => item.productId === newItem.productId);
+        const existingItem = items.find((item) => 
+          item.productId === newItem.productId && 
+          item.customDesignUrl === newItem.customDesignUrl
+        );
         if (existingItem) {
           set({
             items: items.map((item) =>
-              item.productId === newItem.productId
+              (item.productId === newItem.productId && item.customDesignUrl === newItem.customDesignUrl)
                 ? { ...item, quantity: item.quantity + newItem.quantity }
                 : item
             ),
@@ -37,13 +41,19 @@ export const useCartStore = create<CartState>()(
           set({ items: [...items, newItem] });
         }
       },
-      removeItem: (productId) => {
-        set({ items: get().items.filter((item) => item.productId !== productId) });
+      removeItem: (productId, customDesignUrl) => {
+        set({ 
+          items: get().items.filter((item) => 
+            !(item.productId === productId && item.customDesignUrl === customDesignUrl)
+          ) 
+        });
       },
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, customDesignUrl, quantity) => {
         set({
           items: get().items.map((item) =>
-            item.productId === productId ? { ...item, quantity } : item
+            (item.productId === productId && item.customDesignUrl === customDesignUrl) 
+              ? { ...item, quantity } 
+              : item
           ),
         });
       },

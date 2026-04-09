@@ -63,7 +63,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       state,
       zip,
       country,
-      phone 
+      phone,
+      currency,
+      currencySymbol 
     } = req.body;
     
     // Parse items if they are sent as a JSON string (typical for multipart/form-data)
@@ -76,16 +78,28 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     }
     
-    // Calculate total
-    let totalAmount = 0;
+    const { rate = 1 } = req.body; // Expecting conversion rate from frontend
+    
+    // Fetch global settings
+    const settings = await (prisma as any).globalSettings.findFirst();
+    const taxRate = settings ? Number(settings.taxRate) : 0;
+    const deliveryFeeBase = settings ? Number(settings.deliveryFee) : 0;
+    
+    // Calculate subtotal
+    let subtotal = 0;
     const orderItemsData = items.map((item: any) => {
-      totalAmount += item.price * item.quantity;
+      subtotal += Number(item.price) * item.quantity;
       return {
         productId: item.productId,
         quantity: item.quantity,
         priceAtOrder: item.price,
+        customDesignUrl: item.customDesignUrl || null,
       };
     });
+
+    const taxAmount = Number((subtotal * (taxRate / 100)).toFixed(2));
+    const shippingAmount = Number((deliveryFeeBase * Number(rate)).toFixed(2));
+    const totalAmount = Number((subtotal + taxAmount + shippingAmount).toFixed(2));
 
     let paymentScreenshot = null;
     let paymentStatus: 'PENDING' | 'VERIFICATION_PENDING' = 'PENDING';
@@ -128,6 +142,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       data: {
         userId,
         totalAmount,
+        taxAmount,
+        shippingAmount,
+        currency: currency || 'PKR',
+        currencySymbol: currencySymbol || 'Rs.',
         paymentMethod,
         paymentStatus,
         paymentScreenshot,
@@ -137,7 +155,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         },
       },
       include: {
-        orderItems: true,
+        orderItems: { include: { product: true } },
       },
     });
 
@@ -146,13 +164,23 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     
     // Send order confirmation email (non-blocking)
     if (user?.email) {
+      // Map items with names for the email
+      const emailItems = items.map((item: any) => ({
+        name: item.name || 'Product Acquisition',
+        quantity: item.quantity,
+        price: item.price
+      }));
+
       sendOrderConfirmationEmail(
         user.email,
         user.name || 'Customer',
         order.id,
         totalAmount,
-        orderItemsData.length,
-        paymentMethod
+        emailItems,
+        paymentMethod,
+        taxAmount,
+        shippingAmount,
+        (order as any).currencySymbol
       ).catch(err => console.error('Email send failed:', err));
 
       // 🚨 Notify Admin of new order
@@ -161,7 +189,11 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         totalAmount,
         user.name || 'Customer',
         user.email,
-        paymentMethod
+        paymentMethod,
+        emailItems,
+        taxAmount,
+        shippingAmount,
+        (order as any).currencySymbol
       ).catch(err => console.error('Admin Email Notification failed:', err));
     }
 
@@ -170,6 +202,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(201).json(order);
   } catch (error) {
+    console.error('Error creating order:', error);
     res.status(500).json({ message: 'Error creating order', error: (error as Error).message });
   }
 };
@@ -217,7 +250,18 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
 export const updatePaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { paymentStatus } = req.body; // e.g., 'VERIFIED', 'FAILED'
+    const { paymentStatus } = req.body; // e.g., 'VERIFIED', 'FAILED', 'APPROVED'
+
+    // Check current status to prevent multiple email triggers
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: id as string },
+      select: { paymentStatus: true }
+    });
+
+    if (currentOrder?.paymentStatus === paymentStatus) {
+      res.status(200).json({ message: 'Status already updated' });
+      return;
+    }
 
     const order = await prisma.order.update({
       where: { id: id as string },
@@ -228,18 +272,46 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
     });
 
     // Send payment status email to customer (non-blocking)
-    if (order.user?.email && (paymentStatus === 'VERIFIED' || paymentStatus === 'FAILED')) {
+    if (order.user?.email && (paymentStatus === 'VERIFIED' || paymentStatus === 'FAILED' || paymentStatus === 'APPROVED')) {
       sendPaymentStatusEmail(
         order.user.email,
         order.user.name || 'Customer',
         order.id,
         paymentStatus,
-        Number(order.totalAmount)
+        Number(order.totalAmount),
+        Number(order.taxAmount || 0),
+        Number(order.shippingAmount || 0),
+        (order as any).currencySymbol
       ).catch(err => console.error('Email send failed:', err));
     }
 
     res.status(200).json(order);
   } catch (error) {
+    console.error('Error updating status:', error);
     res.status(500).json({ message: 'Error updating payment status', error: (error as Error).message });
+  }
+};
+
+export const deleteOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const order = await prisma.order.findUnique({
+      where: { id: id as string },
+    });
+
+    if (!order) {
+      res.status(404).json({ message: 'Order not found' });
+      return;
+    }
+
+    await prisma.order.delete({
+      where: { id: id as string },
+    });
+
+    res.status(200).json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Error deleting order', error: (error as Error).message });
   }
 };

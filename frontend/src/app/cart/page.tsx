@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/cartStore";
+import api from "@/lib/api";
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,11 +13,27 @@ export default function CartPage() {
   const { items: rawItems, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const items = rawItems.filter(item => item.productId && item.productId !== "undefined");
   const router = useRouter();
+  const [globalSettings, setGlobalSettings] = useState({ taxRate: 0, deliveryFee: 0 });
 
-  const subtotal = getTotal();
-  const shipping = subtotal > 150 ? 0 : 25;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  useEffect(() => {
+    const fetchGlobalSettings = async () => {
+      try {
+        const { data } = await api.get("/settings");
+        setGlobalSettings({
+          taxRate: Number(data.taxRate),
+          deliveryFee: Number(data.deliveryFee)
+        });
+      } catch (err) {
+        console.error("Failed to fetch global settings", err);
+      }
+    };
+    fetchGlobalSettings();
+  }, []);
+
+  const subtotal = Number(getTotal() || 0);
+  const tax = Number((subtotal * (Number(globalSettings.taxRate || 0) / 100)).toFixed(2));
+  const shipping = Number(globalSettings.deliveryFee || 0);
+  const total = Number((subtotal + shipping + tax).toFixed(2));
 
   if (items.length === 0) {
     return (
@@ -64,9 +82,9 @@ export default function CartPage() {
           {/* Cart Items */}
           <div className="lg:col-span-8 space-y-8">
             <AnimatePresence mode="popLayout">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <motion.div
-                  key={item.productId}
+                  key={`${item.productId}-${item.customDesignUrl || 'std'}-${index}`}
                   layout
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -102,23 +120,23 @@ export default function CartPage() {
                       <div className="flex flex-wrap items-center justify-between gap-6 pt-6">
                         <div className="flex items-center gap-6 bg-surface-950/50 p-2 rounded-xl border border-white/5">
                           <button
-                            onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                            onClick={() => updateQuantity(item.productId, item.customDesignUrl, Math.max(1, item.quantity - 1))}
                             className="p-1 hover:text-brand-indigo transition-colors"
                           >
                             <Minus size={18} />
                           </button>
                           <span className="w-8 text-center text-lg font-black">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.productId, item.customDesignUrl, item.quantity + 1)}
                             className="p-2 hover:text-brand-indigo transition-colors"
                           >
                             <Plus size={18} />
                           </button>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.productId)}
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.productId, item.customDesignUrl)}
                           className="flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:text-brand-rose transition-colors uppercase tracking-widest"
                         >
                           <Trash2 size={16} /> Remove
@@ -150,13 +168,13 @@ export default function CartPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-500 uppercase tracking-widest">Estimated Tax</span>
+                  <span className="text-slate-500 uppercase tracking-widest">Tax</span>
                   <span className="text-white">
                     <FormattedPrice amount={tax} />
                   </span>
                 </div>
                 <div className="pt-4 border-t border-white/10 flex justify-between">
-                  <span className="text-lg font-bold text-white uppercase tracking-tighter">Total</span>
+                  <span className="text-lg font-bold text-white uppercase tracking-tighter">Total Amount</span>
                   <span className="text-3xl font-black text-brand-indigo">
                     <FormattedPrice amount={total} />
                   </span>

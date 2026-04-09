@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { useCurrencyStore } from "@/store/currencyStore";
 import { 
   ShieldCheck, 
   Truck, 
@@ -39,6 +40,7 @@ interface Address {
 export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore();
   const { isAuthenticated, token, user } = useAuthStore();
+  const { rate, currency, symbol } = useCurrencyStore();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -65,6 +67,7 @@ export default function CheckoutPage() {
   const [saveAddress, setSaveAddress] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER">("COD");
   const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [globalSettings, setGlobalSettings] = useState({ taxRate: 0, deliveryFee: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -92,7 +95,20 @@ export default function CheckoutPage() {
     if (isAuthenticated) {
       fetchAddresses();
     }
+    fetchGlobalSettings();
   }, [isAuthenticated, token]);
+
+  const fetchGlobalSettings = async () => {
+    try {
+      const { data } = await api.get("/settings");
+      setGlobalSettings({
+        taxRate: Number(data.taxRate),
+        deliveryFee: Number(data.deliveryFee)
+      });
+    } catch (err) {
+      console.error("Failed to fetch global settings", err);
+    }
+  };
 
   const fetchAddresses = async () => {
     try {
@@ -110,10 +126,10 @@ export default function CheckoutPage() {
     }
   };
 
-  const subtotal = getTotal();
-  const shipping = deliveryMethod === "EXPRESS" ? 15 : 0;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  const subtotal = Number(getTotal() || 0);
+  const tax = Number((subtotal * (Number(globalSettings.taxRate || 0) / 100)).toFixed(2));
+  const shipping = Number(globalSettings.deliveryFee || 0);
+  const total = Number((subtotal + tax + shipping).toFixed(2));
 
   if (!isAuthenticated) {
     return (
@@ -157,17 +173,25 @@ export default function CheckoutPage() {
 
     try {
       const formData = new FormData();
+      const { currency, symbol, rate } = useCurrencyStore.getState();
+
       const orderItems = items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        price: item.price,
+        price: item.price * rate, // Convert to selected currency value
+        customDesignUrl: item.customDesignUrl || null,
+        name: item.name,
       }));
 
       formData.append("items", JSON.stringify(orderItems));
+      formData.append("currency", currency);
+      formData.append("currencySymbol", symbol);
+      formData.append("rate", String(rate)); // Send conversion rate for backend calculation verification
       formData.append("paymentMethod", paymentMethod);
       
       formData.append("deliveryMethod", deliveryMethod);
       formData.append("shippingFee", String(shipping));
+      formData.append("taxAmount", String(tax));
       formData.append("totalAmount", String(total));
 
       if (selectedAddressId === "new") {
@@ -606,8 +630,8 @@ export default function CheckoutPage() {
               <h2 className="text-2xl font-bold text-white tracking-tight">REVIEW ORDER</h2>
               
               <div className="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                {items.map((item) => (
-                  <div key={item.productId} className="flex justify-between items-center gap-4 py-4 border-b border-white/5 last:border-0">
+                {items.map((item, index) => (
+                  <div key={`${item.productId}-${item.customDesignUrl || 'std'}-${index}`} className="flex justify-between items-center gap-4 py-4 border-b border-white/5 last:border-0">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl bg-surface-900 overflow-hidden border border-white/5">
                         <img src={item.imageURL} className="w-full h-full object-cover" alt="" />
@@ -632,13 +656,19 @@ export default function CheckoutPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 uppercase font-bold tracking-widest">Tax ({globalSettings.taxRate}%)</span>
+                  <span className="text-white">
+                    <FormattedPrice amount={tax} />
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
                   <span className="text-slate-500 uppercase font-bold tracking-widest">Shipping</span>
                   <span className="text-white">
                     {shipping === 0 ? "FREE" : <FormattedPrice amount={shipping} />}
                   </span>
                 </div>
                 <div className="flex justify-between pt-4 border-t border-white/10">
-                  <span className="text-lg font-bold text-white uppercase tracking-tighter">Amount Due</span>
+                  <span className="text-lg font-bold text-white uppercase tracking-tighter">Total Amount</span>
                   <span className="text-3xl font-black text-brand-indigo">
                     <FormattedPrice amount={total} />
                   </span>

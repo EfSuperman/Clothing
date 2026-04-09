@@ -30,6 +30,7 @@ enum PaymentStatus {
   PENDING
   VERIFICATION_PENDING // Waiting for admin to verify screenshot
   VERIFIED
+  APPROVED             // For COD or confirmed payment, ready for delivery
   FAILED
   REFUNDED
 }
@@ -102,6 +103,10 @@ model Order {
   userId            String?
   user              User?    @relation(fields: [userId], references: [id])
   totalAmount       Decimal  @db.Decimal(10, 2)
+  taxAmount         Decimal  @default(0) @db.Decimal(10, 2)
+  shippingAmount    Decimal  @default(0) @db.Decimal(10, 2)
+  currency          String   @default("PKR")
+  currencySymbol    String   @default("Rs.")
   status            OrderStatus @default(PENDING)
   shippingAddressId String?
   shippingAddress   Address? @relation(fields: [shippingAddressId], references: [id])
@@ -120,11 +125,12 @@ model Order {
 model OrderItem {
   id           String   @id @default(uuid())
   orderId      String
-  order        Order    @relation(fields: [orderId], references: [id])
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId    String
   product      Product  @relation(fields: [productId], references: [id])
   quantity     Int
   priceAtOrder Decimal  @db.Decimal(10, 2)
+  customDesignUrl String?
 }
 
 model CartItem {
@@ -162,4 +168,11 @@ model Decal {
   name      String
   imageUrl  String
   createdAt DateTime @default(now())
+}
+
+model GlobalSettings {
+  id          Int      @id @default(1)
+  taxRate     Decimal  @default(0) @db.Decimal(10, 2) // As percentage (ignore for now) or fixed?
+  deliveryFee Decimal  @default(0) @db.Decimal(10, 2)
+  updatedAt   DateTime @updatedAt
 }

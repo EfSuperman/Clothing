@@ -100,7 +100,7 @@ export default function OrderHistoryPage() {
                       <div className="text-left md:text-right">
                         <p className="text-[0.65rem] text-slate-500 font-mono tracking-widest uppercase mb-1">Total Value</p>
                         <p className="text-2xl font-black text-white italic tracking-tight">
-                          <FormattedPrice amount={order.totalAmount || 0} />
+                          <FormattedPrice amount={order.totalAmount || 0} customSymbol={order.currencySymbol} />
                         </p>
                       </div>
                     </div>
@@ -120,11 +120,11 @@ export default function OrderHistoryPage() {
                           </div>
                           <div className="space-y-1">
                             <h4 className="text-lg font-bold text-white tracking-tight uppercase italic">{item.product?.name || 'Unknown Product'}</h4>
-                            <p className="text-[0.7rem] text-slate-500 font-mono tracking-widest uppercase">Qty: {item.quantity} × <FormattedPrice amount={item.priceAtOrder} /></p>
+                            <p className="text-[0.7rem] text-slate-500 font-mono tracking-widest uppercase">Qty: {item.quantity} × <FormattedPrice amount={item.priceAtOrder} customSymbol={order.currencySymbol} /></p>
                           </div>
                         </div>
                         <div className="text-xl font-bold text-slate-300 italic tracking-tighter">
-                          <FormattedPrice amount={item.priceAtOrder * item.quantity} />
+                          <FormattedPrice amount={item.priceAtOrder * item.quantity} customSymbol={order.currencySymbol} />
                         </div>
                       </li>
                     ))}

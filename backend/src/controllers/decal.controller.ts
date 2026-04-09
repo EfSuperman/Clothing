@@ -63,3 +63,15 @@ export const deleteDecal = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting decal' });
   }
 };
+
+export const uploadOnly = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    res.json({ imageUrl: req.file.path });
+  } catch (error) {
+    console.error('Error in public upload:', error);
+    res.status(500).json({ message: 'Upload failed' });
+  }
+};

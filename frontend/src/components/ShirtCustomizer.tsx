@@ -12,8 +12,10 @@ import {
   Sphere
 } from "@react-three/drei";
 import * as THREE from "three";
-import { motion } from "framer-motion";
-import { Palette, Image as ImageIcon, RotateCcw, Box, Check, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Palette, Image as ImageIcon, RotateCcw, Box, Check, Sparkles, Upload, X } from "lucide-react";
+import { useCartStore } from "@/store/cartStore";
+import { useRef } from "react";
 
 const COLORS = [
   { name: "Infinity Black", value: "#050505" },
@@ -84,6 +86,13 @@ export default function ShirtCustomizer() {
   const [selectedDesign, setSelectedDesign] = useState<string>("none");
   const [designs, setDesigns] = useState(DEFAULT_DESIGNS);
   const [isMobile, setIsMobile] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [customDesign, setCustomDesign] = useState<File | null>(null);
+  const [customDesignUrl, setCustomDesignUrl] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const addItem = useCartStore((state) => state.addItem);
+  const [isAdded, setIsAdded] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -108,6 +117,69 @@ export default function ShirtCustomizer() {
     };
     fetchDecals();
   }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCustomDesign(file);
+      const url = URL.createObjectURL(file);
+      setCustomDesignUrl(url);
+      
+      const newDesign = { id: "custom-user", name: "Your Design", url };
+      setDesigns(prev => {
+        const filtered = prev.filter(d => d.id !== "custom-user");
+        return [newDesign, ...filtered];
+      });
+      setSelectedDesign("custom-user");
+    }
+  };
+
+  const handleLockIn = async () => {
+    setIsUploading(true);
+    try {
+      let finalDesignUrl = decalUrl;
+
+      // If it's a custom user design, we might want to upload it to the server
+      // But for now, as per user's request for "session based", we keep it local
+      // or we can upload it if we want it to persist in the order.
+      // Given the prompt "agr upload kr kay order krdy ga to hamary pass ajye ge",
+      // we SHOULD upload it now to get a permanent URL for the cart.
+      
+      if (selectedDesign === "custom-user" && customDesign) {
+        const formData = new FormData();
+        formData.append("image", customDesign);
+        formData.append("name", `Custom Design ${Date.now()}`);
+        
+        // Use the new public upload endpoint
+        const res = await api.post("/decals/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        finalDesignUrl = res.data.imageUrl;
+      }
+
+      // Fetch a base product ID (e.g., the first T-Shirt)
+      const { data: products } = await api.get("/products");
+      const shirtProduct = products.find((p: any) => p.name.toLowerCase().includes("shirt")) || products[0];
+
+      if (shirtProduct) {
+        addItem({
+          productId: shirtProduct.id,
+          name: `${shirtProduct.name} (Customized)`,
+          price: shirtProduct.price,
+          quantity: 1,
+          imageURL: shirtProduct.imageURLs[0],
+          customDesignUrl: finalDesignUrl || undefined
+        });
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to lock in selection", error);
+      alert("Failed to add to cart. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const decalUrl = designs.find(d => d.id === selectedDesign)?.url || null;
 
@@ -177,6 +249,21 @@ export default function ShirtCustomizer() {
             </div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center p-4 md:p-6 rounded-[1.5rem] md:rounded-3xl border border-dashed border-brand-indigo/30 bg-brand-indigo/5 text-brand-indigo hover:bg-brand-indigo/10 transition-all"
+            >
+              <Upload size={20} className="mb-2" />
+              <span className="font-bold text-[10px] uppercase tracking-[0.2em]">Upload Own</span>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept="image/*" 
+                className="hidden" 
+              />
+            </button>
+
             {designs.map((design) => (
               <button key={design.id} onClick={() => setSelectedDesign(design.id)} className={`flex flex-col items-start p-4 md:p-6 rounded-[1.5rem] md:rounded-3xl border transition-all ${selectedDesign === design.id ? "bg-brand-rose/10 border-brand-rose/50 text-white" : "bg-white/[0.02] border-white/5 text-slate-500 hover:bg-white/5"}`}>
                 <span className="font-bold text-[10px] uppercase tracking-[0.2em] mb-2 truncate w-full text-left">{design.name}</span>
@@ -184,8 +271,16 @@ export default function ShirtCustomizer() {
               </button>
             ))}
           </div>
-          <button className="w-full bg-white text-black font-black py-5 rounded-[2rem] text-xs uppercase tracking-[0.3em] hover:bg-brand-indigo hover:text-white transition-all shadow-2xl">
-            Lock In Selection <Box size={14} className="inline ml-2" />
+          <button 
+            onClick={handleLockIn}
+            disabled={isUploading}
+            className={`w-full font-black py-5 rounded-[2rem] text-xs uppercase tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-2 ${
+              isAdded 
+                ? "bg-brand-cyan text-surface-950" 
+                : "bg-white text-black hover:bg-brand-indigo hover:text-white"
+            }`}
+          >
+            {isUploading ? "Processing..." : isAdded ? <><Check size={14} /> Added to Cart</> : <><Box size={14} /> Lock In Selection</>}
           </button>
         </motion.div>
       </div>

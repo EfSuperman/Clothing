@@ -53,11 +53,10 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
 
   detectAndSetCurrency: async () => {
     try {
-      // Try to detect currency via IP - handle 403 or other failures gracefully
-      const response = await axios.get('https://ip-api.com/json').catch(() => null);
+      // Try to detect currency via IP - switched to ipapi.co for better reliability
+      const response = await axios.get('https://ipapi.co/json').catch(() => null);
       
       if (!response || !response.data) {
-        console.warn('IP-API blocked or failed, defaulting to PKR');
         get().setCurrency('PKR');
         return;
       }

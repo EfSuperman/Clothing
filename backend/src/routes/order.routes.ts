@@ -6,6 +6,7 @@ import {
   getUserOrders,
   getAllOrders,
   updatePaymentStatus,
+  deleteOrder,
 } from '../controllers/order.controller';
 
 const router = Router();
@@ -17,5 +18,6 @@ router.get('/my-orders', authenticate, getUserOrders);
 // Admin Routes
 router.get('/', authenticate, authorizeAdmin, getAllOrders);
 router.patch('/:id/payment-status', authenticate, authorizeAdmin, updatePaymentStatus);
+router.delete('/:id', authenticate, authorizeAdmin, deleteOrder);
 
 export default router;

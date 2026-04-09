@@ -79,13 +79,34 @@ function baseTemplate(title: string, content: string): string {
 
 // ─── Specific Email Senders ─────────────────────────────────────────
 
+function generateItemListHtml(items: any[], currencySymbol: string): string {
+  return `
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
+      ${items.map(item => `
+        <tr>
+          <td style="padding:15px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <p style="margin:0; color:#fff; font-size:13px; font-weight:700;">${item.name || 'Product Acquisition'}</p>
+            <p style="margin:4px 0 0 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.05em;">Quantity: ${item.quantity}</p>
+          </td>
+          <td style="padding:15px 0; border-bottom:1px solid rgba(255,255,255,0.05); text-align:right; color:#fff; font-size:13px; font-weight:700;">
+            ${currencySymbol}${Number(item.price).toFixed(2)}
+          </td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
 export async function sendOrderConfirmationEmail(
   to: string,
   customerName: string,
   orderId: string,
   totalAmount: number,
-  itemCount: number,
-  paymentMethod: string
+  items: any[],
+  paymentMethod: string,
+  taxAmount: number = 0,
+  shippingAmount: number = 0,
+  currencySymbol: string = 'Rs.'
 ): Promise<void> {
   const content = `
     <p style="margin:0 0 20px 0;">
@@ -99,16 +120,28 @@ export async function sendOrderConfirmationEmail(
           <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">#${orderId.slice(0, 8)}</td>
         </tr>
         <tr>
-          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Items</td>
-          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${itemCount} unit(s)</td>
-        </tr>
-        <tr>
-          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Total</td>
-          <td style="padding:5px 0; color:${BRAND_COLOR}; font-size:16px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
-        </tr>
-        <tr>
           <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
           <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' : 'Cash on Delivery'}</td>
+        </tr>
+      </table>
+      
+      ${generateItemListHtml(items, currencySymbol)}
+
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:10px;">
+        <tr>
+          <td style="padding:4px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Order Tax</td>
+          <td style="padding:4px 0; color:#fff; font-size:12px; text-align:right;">${currencySymbol}${Number(taxAmount).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Shipping</td>
+          <td style="padding:4px 0; color:#fff; font-size:12px; text-align:right;">${currencySymbol}${Number(shippingAmount).toFixed(2)}</td>
+        </tr>
+      </table>
+
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:15px; border-top:2px solid ${BRAND_COLOR}; padding-top:15px;">
+        <tr>
+          <td style="color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Total Amount</td>
+          <td style="color:${BRAND_COLOR}; font-size:18px; text-align:right; font-weight:900;">${currencySymbol}${Number(totalAmount).toFixed(2)}</td>
         </tr>
       </table>
     </div>
@@ -139,27 +172,44 @@ export async function sendPaymentStatusEmail(
   to: string,
   customerName: string,
   orderId: string,
-  status: 'VERIFIED' | 'FAILED',
-  totalAmount: number
+  status: 'VERIFIED' | 'FAILED' | 'APPROVED',
+  totalAmount: number,
+  taxAmount: number = 0,
+  shippingAmount: number = 0,
+  currencySymbol: string = 'Rs.'
 ): Promise<void> {
-  const isVerified = status === 'VERIFIED';
-  const statusColor = isVerified ? '#22c55e' : '#ef4444';
-  const statusText = isVerified ? 'Payment Verified ✅' : 'Payment Rejected ❌';
-  const statusMessage = isVerified
-    ? 'Your bank transfer has been verified successfully. Your order is now being processed and will be shipped soon!'
-    : 'Unfortunately, your bank transfer could not be verified. Please contact our support team for assistance or place a new order.';
+  const isApproved = status === 'APPROVED' || status === 'VERIFIED';
+  const statusColor = isApproved ? '#22c55e' : '#ef4444';
+  const statusText = status === 'APPROVED' ? 'Order Approved ✅' : (status === 'VERIFIED' ? 'Payment Verified ✅' : 'Payment Rejected ❌');
+  
+  let statusMessage = '';
+  if (status === 'APPROVED') {
+    statusMessage = 'Your order has been approved and is now being prepared for delivery. Our logistics team is handling your package with care.';
+  } else if (status === 'VERIFIED') {
+    statusMessage = 'Your bank transfer has been verified successfully. Your order is now being prepared for delivery and will be shipped shortly!';
+  } else {
+    statusMessage = 'Unfortunately, your payment verification could not be completed. Please contact our support team for assistance.';
+  }
 
   const content = `
     <p style="margin:0 0 20px 0;">
       Dear <strong>${customerName}</strong>,
     </p>
-    <div style="text-align:center; padding:20px; background-color:rgba(${isVerified ? '34,197,94' : '239,68,68'},0.1); border:1px solid rgba(${isVerified ? '34,197,94' : '239,68,68'},0.2); border-radius:12px; margin-bottom:20px;">
+    <div style="text-align:center; padding:20px; background-color:rgba(${isApproved ? '34,197,94' : '239,68,68'},0.1); border:1px solid rgba(${isApproved ? '34,197,94' : '239,68,68'},0.2); border-radius:12px; margin-bottom:20px;">
       <p style="font-size:18px; font-weight:900; color:${statusColor}; margin:0 0 5px 0;">${statusText}</p>
-      <p style="font-size:11px; color:${MUTED_COLOR}; margin:0;">Order #${orderId.slice(0, 8)} — $${totalAmount.toFixed(2)}</p>
+      <p style="font-size:11px; color:${MUTED_COLOR}; margin:0;">Order #${orderId.slice(0, 8)}</p>
+      <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+        <p style="font-size:10px; color:${MUTED_COLOR}; margin:0;">Tax: ${currencySymbol}${Number(taxAmount || 0).toFixed(2)} | Shipping: ${currencySymbol}${Number(shippingAmount || 0).toFixed(2)}</p>
+        <p style="font-size:16px; font-weight:900; color:#fff; margin:5px 0 0 0;">Total: ${currencySymbol}${Number(totalAmount).toFixed(2)}</p>
+      </div>
     </div>
     <p style="color:${MUTED_COLOR}; font-size:13px; line-height:1.6; margin:0;">
       ${statusMessage}
     </p>
+    ${isApproved ? `
+    <div style="margin-top:20px; padding:15px; border:1px dashed ${BRAND_COLOR}; border-radius:10px; text-align:center;">
+      <p style="color:${BRAND_COLOR}; font-size:12px; font-weight:bold; margin:0; text-transform:uppercase;">📦 Status: Ready for Delivery</p>
+    </div>` : ''}
   `;
 
   try {
@@ -167,7 +217,7 @@ export async function sendPaymentStatusEmail(
     await transporter.sendMail({
       from: `"VISION Store" <${process.env.SMTP_EMAIL}>`,
       to,
-      subject: `VISION — Payment ${isVerified ? 'Verified' : 'Update'} for Order #${orderId.slice(0, 8)}`,
+      subject: `VISION — ${isApproved ? 'Order Update' : 'Payment Status'} for Order #${orderId.slice(0, 8)}`,
       html: baseTemplate(statusText, content),
     });
     console.log(`✅ Payment status email sent to ${to} (${status})`);
@@ -181,7 +231,11 @@ export async function sendAdminOrderNotificationEmail(
   totalAmount: number,
   customerName: string,
   customerEmail: string,
-  paymentMethod: string
+  paymentMethod: string,
+  items: any[],
+  taxAmount: number = 0,
+  shippingAmount: number = 0,
+  currencySymbol: string = 'Rs.'
 ): Promise<void> {
   const content = `
     <p style="margin:0 0 20px 0;">
@@ -195,20 +249,36 @@ export async function sendAdminOrderNotificationEmail(
         </tr>
         <tr>
           <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Customer</td>
-          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${customerName}</td>
-        </tr>
-        <tr>
-          <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Amount</td>
-          <td style="padding:5px 0; color:${BRAND_COLOR}; font-size:16px; text-align:right; font-weight:900;">$${totalAmount.toFixed(2)}</td>
+          <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${customerName} (${customerEmail})</td>
         </tr>
         <tr>
           <td style="padding:5px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Payment</td>
           <td style="padding:5px 0; color:#fff; font-size:13px; text-align:right; font-weight:700;">${paymentMethod}</td>
         </tr>
       </table>
+
+      ${generateItemListHtml(items, currencySymbol)}
+
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:10px;">
+        <tr>
+          <td style="padding:4px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Total Tax</td>
+          <td style="padding:4px 0; color:#fff; font-size:12px; text-align:right;">${currencySymbol}${Number(taxAmount).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0; color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em;">Shipping Amount</td>
+          <td style="padding:4px 0; color:#fff; font-size:12px; text-align:right;">${currencySymbol}${Number(shippingAmount).toFixed(2)}</td>
+        </tr>
+      </table>
+
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:15px; border-top:2px solid ${BRAND_COLOR}; padding-top:15px;">
+        <tr>
+          <td style="color:${MUTED_COLOR}; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Total Amount</td>
+          <td style="color:${BRAND_COLOR}; font-size:18px; text-align:right; font-weight:900;">${currencySymbol}${Number(totalAmount).toFixed(2)}</td>
+        </tr>
+      </table>
     </div>
     <div style="text-align:center;">
-      <a href="https://vision-vsn.vercel.app/admin/orders" style="display:inline-block; padding:12px 20px; background-color:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:10px; font-weight:bold; font-size:12px;">VIEW ORDER IN DASHBOARD</a>
+      <a href="http://localhost:3000/admin/orders" style="display:inline-block; padding:12px 20px; background-color:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:10px; font-weight:bold; font-size:12px;">VIEW ORDER IN DASHBOARD</a>
     </div>
   `;
 
@@ -217,7 +287,7 @@ export async function sendAdminOrderNotificationEmail(
     await transporter.sendMail({
       from: `"VISION System" <${process.env.SMTP_EMAIL}>`,
       to: process.env.SMTP_EMAIL, // Send to the store owner
-      subject: `🚨 NEW ORDER: #${orderId.slice(0, 8)} - $${totalAmount.toFixed(2)}`,
+      subject: `🚨 NEW ORDER: #${orderId.slice(0, 8)} - ${currencySymbol}${Number(totalAmount).toFixed(2)}`,
       html: baseTemplate('New Order Received 📦', content),
     });
     console.log(`✅ Admin notification sent for order ${orderId}`);
