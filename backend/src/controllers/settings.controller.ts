@@ -12,6 +12,8 @@ export const getSettings = async (req: Request, res: Response) => {
           id: 1,
           taxRate: 0,
           deliveryFee: 0,
+          customizedShirtPrice: 0,
+          customizedShirtCostPrice: 0,
         },
       });
     }
@@ -25,18 +27,22 @@ export const getSettings = async (req: Request, res: Response) => {
 
 export const updateSettings = async (req: Request, res: Response) => {
   try {
-    const { taxRate, deliveryFee } = req.body;
+    const { taxRate, deliveryFee, customizedShirtPrice, customizedShirtCostPrice } = req.body;
 
     const settings = await (prisma as any).globalSettings.upsert({
       where: { id: 1 },
       update: {
         taxRate: taxRate !== undefined ? Number(taxRate) : undefined,
         deliveryFee: deliveryFee !== undefined ? Number(deliveryFee) : undefined,
+        customizedShirtPrice: customizedShirtPrice !== undefined ? Number(customizedShirtPrice) : undefined,
+        customizedShirtCostPrice: customizedShirtCostPrice !== undefined ? Number(customizedShirtCostPrice) : undefined,
       },
       create: {
         id: 1,
         taxRate: Number(taxRate || 0),
         deliveryFee: Number(deliveryFee || 0),
+        customizedShirtPrice: Number(customizedShirtPrice || 0),
+        customizedShirtCostPrice: Number(customizedShirtCostPrice || 0),
       },
     });
 

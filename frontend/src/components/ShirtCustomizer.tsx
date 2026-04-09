@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Palette, Image as ImageIcon, RotateCcw, Box, Check, Sparkles, Upload, X } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useRef } from "react";
+import { FormattedPrice } from "./FormattedPrice";
 
 const COLORS = [
   { name: "Infinity Black", value: "#050505" },
@@ -89,6 +90,7 @@ export default function ShirtCustomizer() {
   const [isUploading, setIsUploading] = useState(false);
   const [customDesign, setCustomDesign] = useState<File | null>(null);
   const [customDesignUrl, setCustomDesignUrl] = useState<string | null>(null);
+  const [globalSettings, setGlobalSettings] = useState({ customizedShirtPrice: 0 });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addItem = useCartStore((state) => state.addItem);
@@ -102,20 +104,27 @@ export default function ShirtCustomizer() {
   }, []);
 
   useEffect(() => {
-    const fetchDecals = async () => {
+    const fetchDecalsAndSettings = async () => {
       try {
-        const res = await api.get('/decals');
-        const customDecals = res.data.map((d: any) => ({
+        const [decalRes, settingsRes] = await Promise.all([
+          api.get('/decals'),
+          api.get('/settings')
+        ]);
+
+        const customDecals = decalRes.data.map((d: any) => ({
           id: d.id,
           name: d.name,
           url: d.imageUrl
         }));
         setDesigns([...DEFAULT_DESIGNS, ...customDecals]);
+        setGlobalSettings({
+          customizedShirtPrice: Number(settingsRes.data.customizedShirtPrice || 0)
+        });
       } catch (error) {
-        console.error("Failed to load custom decals from Admin", error);
+        console.error("Failed to load decals or settings", error);
       }
     };
-    fetchDecals();
+    fetchDecalsAndSettings();
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,8 +173,8 @@ export default function ShirtCustomizer() {
       if (shirtProduct) {
         addItem({
           productId: shirtProduct.id,
-          name: `${shirtProduct.name} (Customized)`,
-          price: shirtProduct.price,
+          name: `Visionary Customized Shirt`, 
+          price: globalSettings.customizedShirtPrice || shirtProduct.price,
           quantity: 1,
           imageURL: shirtProduct.imageURLs[0],
           customDesignUrl: finalDesignUrl || undefined
@@ -271,6 +280,18 @@ export default function ShirtCustomizer() {
               </button>
             ))}
           </div>
+          <div className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.03] border border-white/5">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Price</span>
+              <p className="text-white text-xs font-bold uppercase tracking-tight">Custom Studio Masterpiece</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-black text-white italic tracking-tighter leading-none">
+                <FormattedPrice amount={globalSettings.customizedShirtPrice} />
+              </p>
+            </div>
+          </div>
+
           <button 
             onClick={handleLockIn}
             disabled={isUploading}

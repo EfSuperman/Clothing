@@ -22,6 +22,7 @@ export default function AdminProductsPage() {
     name: '',
     description: '',
     price: '',
+    costPrice: '',
     stockQty: '',
     imageURLs: '',
     categoryId: '',
@@ -55,7 +56,7 @@ export default function AdminProductsPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', price: '', stockQty: '', imageURLs: '', categoryId: '' });
+    setFormData({ name: '', description: '', price: '', costPrice: '', stockQty: '', imageURLs: '', categoryId: '' });
     setEditingId(null);
     setIsFormOpen(false);
   };
@@ -65,6 +66,7 @@ export default function AdminProductsPage() {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
+      costPrice: (product.costPrice || 0).toString(),
       stockQty: product.stockQty.toString(),
       imageURLs: product.imageURLs.join(', '),
       categoryId: product.categoryId || '',
@@ -90,13 +92,30 @@ export default function AdminProductsPage() {
 
     try {
       const urlsArray = formData.imageURLs.split(',').map((url) => url.trim()).filter((url) => url);
+      const price = parseFloat(formData.price);
+      const costPrice = parseFloat(formData.costPrice || '0');
+      const stockQty = parseInt(formData.stockQty);
+
+      if (isNaN(price) || isNaN(costPrice) || isNaN(stockQty)) {
+        alert('Value error: Please ensure prices and quantities are numeric.');
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...formData,
-        price: parseFloat(formData.price),
-        stockQty: parseInt(formData.stockQty),
+        price,
+        costPrice,
+        stockQty,
         imageURLs: urlsArray,
         categoryId: formData.categoryId || undefined,
       };
+
+      if (!payload.categoryId) {
+        alert('Category assignment is mandatory for catalog precision.');
+        setLoading(false);
+        return;
+      }
 
       if (editingId) {
         const { data } = await api.put(`/products/${editingId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
@@ -175,14 +194,26 @@ export default function AdminProductsPage() {
                         placeholder="Craftsmanship details..."
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-2 block">Value (USD)</label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-2 block">Cost Value (PKR)</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-4 font-bold text-slate-500 text-sm">Rs.</span>
+                          <input 
+                            required name="costPrice" type="number" step="0.01" value={formData.costPrice} onChange={handleInputChange}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-6 py-4 text-white focus:border-brand-indigo transition-all outline-none"
+                            placeholder="Buying Price"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-2 block">Retail Value (PKR)</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-4 font-bold text-brand-indigo text-sm">Rs.</span>
                           <input 
                             required name="price" type="number" step="0.01" value={formData.price} onChange={handleInputChange}
-                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-10 pr-6 py-4 text-white focus:border-brand-indigo transition-all outline-none"
+                            className="w-full bg-white/5 border border-brand-indigo/20 rounded-2xl pl-12 pr-6 py-4 text-white focus:border-brand-indigo transition-all outline-none"
+                            placeholder="Selling Price"
                           />
                         </div>
                       </div>
@@ -281,8 +312,13 @@ export default function AdminProductsPage() {
                           {product.category?.name || 'Unclassified'}
                         </span>
                       </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-white font-black italic tracking-tighter text-lg">
-                        ${product.price ? Number(product.price).toFixed(2) : '0.00'}
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-white font-black italic tracking-tighter text-lg">
+                            Rs. {product.price ? Number(product.price).toFixed(2) : '0.00'}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-mono uppercase">Cost: Rs. {product.costPrice ? Number(product.costPrice).toFixed(2) : '0.00'}</span>
+                        </div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="flex items-center gap-2">

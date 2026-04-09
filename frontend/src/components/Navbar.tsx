@@ -33,6 +33,7 @@ const Navbar = () => {
       { name: "Orders", href: "/admin/orders" },
       { name: "Settings", href: "/admin/settings" },
       { name: "Products Admin", href: "/admin/products" },
+      { name: "Categories Admin", href: "/admin/categories" },
       { name: "Decals Admin", href: "/admin/decals" }
     ] : []),
   ];

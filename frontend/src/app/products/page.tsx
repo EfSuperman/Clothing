@@ -22,9 +22,20 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState<{id: string, name: string} | null>(null);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
 
-  const categories = ["All", "Essentials", "Urban", "Sport", "Accessories"];
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const { data } = await api.get('/categories');
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -32,7 +43,7 @@ export default function ProductsPage() {
       try {
         const params = new URLSearchParams();
         if (searchTerm) params.append("search", searchTerm);
-        if (activeCategory !== "All") params.append("category", activeCategory);
+        if (activeCategory) params.append("categoryId", activeCategory.id);
         
         const queryString = params.toString();
         const url = queryString ? `/products?${queryString}` : "/products";
@@ -81,7 +92,7 @@ export default function ProductsPage() {
               <button 
                 onClick={() => setShowFilters(!showFilters)}
                 className={`p-4 rounded-2xl border transition-all ${
-                  showFilters || activeCategory !== "All" 
+                  showFilters || activeCategory
                     ? "bg-brand-indigo/10 border-brand-indigo text-brand-indigo" 
                     : "bg-surface-900 border-white/5 text-slate-400 hover:border-white/10"
                 }`}
@@ -91,19 +102,28 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Quick Filters */}
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
+                !activeCategory
+                  ? "bg-brand-indigo text-white shadow-lg shadow-brand-indigo/20"
+                  : "bg-surface-900 text-slate-400 border border-white/5 hover:border-white/10 hover:text-white"
+              }`}
+            >
+              All
+            </button>
             {categories.map((cat) => (
               <button
-                key={cat}
+                key={cat.id}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
-                  activeCategory === cat
+                  activeCategory?.id === cat.id
                     ? "bg-brand-indigo text-white shadow-lg shadow-brand-indigo/20"
                     : "bg-surface-900 text-slate-400 border border-white/5 hover:border-white/10 hover:text-white"
                 }`}
               >
-                {cat}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -131,7 +151,7 @@ export default function ProductsPage() {
                 <p className="text-slate-500">Try adjusting your filters or search terms.</p>
               </div>
               <button 
-                onClick={() => { setSearchTerm(""); setActiveCategory("All"); }}
+                onClick={() => { setSearchTerm(""); setActiveCategory(null); }}
                 className="text-sm font-bold text-brand-indigo uppercase tracking-widest hover:underline"
               >
                 Clear all filters

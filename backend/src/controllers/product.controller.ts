@@ -48,13 +48,14 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 // Create product (Admin only)
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, price, stockQty, imageURLs, categoryId } = req.body;
+    const { name, description, price, costPrice, stockQty, imageURLs, categoryId } = req.body;
 
     const product = await prisma.product.create({
       data: {
         name,
         description,
         price,
+        costPrice,
         stockQty,
         imageURLs,
         categoryId,
@@ -71,16 +72,34 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, description, price, stockQty, imageURLs, categoryId } = req.body;
+    const { name, description, price, costPrice, stockQty, imageURLs, categoryId } = req.body;
+
+    const updateData: any = { 
+      name, 
+      description, 
+      price, 
+      costPrice, 
+      stockQty, 
+      imageURLs
+    };
+
+    if (categoryId) {
+      updateData.category = { connect: { id: categoryId } };
+    }
 
     const product = await prisma.product.update({
       where: { id: id as string },
-      data: { name, description, price, stockQty, imageURLs, categoryId },
+      data: updateData,
     });
 
     res.status(200).json(product);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating product', error: (error as Error).message });
+  } catch (error: any) {
+    console.error('CRITICAL UPDATE ERROR:', error);
+    res.status(500).json({ 
+      message: 'Product revision failed.', 
+      error: error.message,
+      code: error.code // Prisma error code
+    });
   }
 };
 

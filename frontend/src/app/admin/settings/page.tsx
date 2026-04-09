@@ -9,7 +9,7 @@ import { FormattedPrice } from '@/components/FormattedPrice';
 
 export default function AdminSettingsPage() {
   const { isAuthenticated, user, token } = useAuthStore();
-  const [settings, setSettings] = useState({ taxRate: 0, deliveryFee: 0 });
+  const [settings, setSettings] = useState({ taxRate: 0, deliveryFee: 0, customizedShirtPrice: 0, customizedShirtCostPrice: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -25,8 +25,10 @@ export default function AdminSettingsPage() {
       try {
         const { data } = await api.get('/settings');
         setSettings({
-          taxRate: Number(data.taxRate),
-          deliveryFee: Number(data.deliveryFee)
+          taxRate: Number(data.taxRate || 0),
+          deliveryFee: Number(data.deliveryFee || 0),
+          customizedShirtPrice: Number(data.customizedShirtPrice || 0),
+          customizedShirtCostPrice: Number(data.customizedShirtCostPrice || 0)
         });
       } catch (err) {
         console.error('Failed to fetch settings', err);
@@ -116,7 +118,7 @@ export default function AdminSettingsPage() {
                   step="0.01"
                   min="0"
                   max="100"
-                  value={settings.taxRate}
+                  value={settings.taxRate || 0}
                   onChange={(e) => setSettings({ ...settings, taxRate: parseFloat(e.target.value) || 0 })}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-brand-indigo/50 transition-all"
                   placeholder="e.g. 16.00"
@@ -135,7 +137,7 @@ export default function AdminSettingsPage() {
                   <h2 className="text-lg font-bold text-white tracking-tight uppercase tracking-widest">Logistics Fee</h2>
                 </div>
                 <span className="text-2xl font-black text-brand-cyan italic">
-                   <FormattedPrice amount={settings.deliveryFee} />
+                   <FormattedPrice amount={settings.deliveryFee || 0} customSymbol="Rs. " />
                 </span>
               </div>
               
@@ -145,12 +147,70 @@ export default function AdminSettingsPage() {
                   type="number" 
                   step="1"
                   min="0"
-                  value={settings.deliveryFee}
+                  value={settings.deliveryFee || 0}
                   onChange={(e) => setSettings({ ...settings, deliveryFee: parseFloat(e.target.value) || 0 })}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-brand-cyan/50 transition-all"
                   placeholder="e.g. 250"
                 />
                 <p className="text-[10px] text-slate-500 italic">Fixed price applied to every order regardless of volume.</p>
+              </div>
+            </div>
+
+            {/* Customized Shirt Price */}
+            <div className="glass-dark p-8 rounded-[2.5rem] border border-white/10 group hover:border-brand-rose/30 transition-all duration-500">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-800 rounded-xl">
+                    <Settings className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white tracking-tight uppercase tracking-widest">Customizable Retail</h2>
+                </div>
+                <span className="text-2xl font-black text-brand-rose italic">
+                   <FormattedPrice amount={settings.customizedShirtPrice || 0} customSymbol="Rs. " />
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                <label className="block text-[0.65rem] font-mono text-slate-500 uppercase tracking-widest">Retail Price for Studio</label>
+                <input 
+                  type="number" 
+                  step="1"
+                  min="0"
+                  value={settings.customizedShirtPrice || 0}
+                  onChange={(e) => setSettings({ ...settings, customizedShirtPrice: parseFloat(e.target.value) || 0 })}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-brand-rose/50 transition-all"
+                  placeholder="e.g. 2000"
+                />
+                <p className="text-[10px] text-slate-500 italic">User-facing selling price.</p>
+              </div>
+            </div>
+
+            {/* Customized Shirt Cost Price */}
+            <div className="glass-dark p-8 rounded-[2.5rem] border border-white/10 group hover:border-orange-500/30 transition-all duration-500">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-800 rounded-xl">
+                    <Settings className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white tracking-tight uppercase tracking-widest">Customizable Cost</h2>
+                </div>
+                <span className="text-2xl font-black text-orange-500 italic">
+                   <FormattedPrice amount={(settings as any).customizedShirtCostPrice || 0} customSymbol="Rs. " />
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                <label className="block text-[0.65rem] font-mono text-slate-500 uppercase tracking-widest">Cost Price for Profit Stats</label>
+                <input 
+                  type="number" 
+                  step="1"
+                  min="0"
+                  value={(settings as any).customizedShirtCostPrice || 0}
+                  onChange={(e) => setSettings({ ...settings, customizedShirtCostPrice: parseFloat(e.target.value) || 0 } as any)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-orange-500/50 transition-all"
+                  placeholder="e.g. 1500"
+                />
+                <p className="text-[10px] text-slate-500 italic">Production cost for custom studio orders.</p>
               </div>
             </div>
           </div>

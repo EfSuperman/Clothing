@@ -1,9 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id           String         @id @default(uuid())
+  name         String?
+  email        String?        @unique
+  passwordHash String?
+  role         Role           @default(USER)
+  isGuest      Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  googleId     String?        @unique
+  phone        String?
+  addresses    Address[]
+  cartItems    CartItem[]
+  orders       Order[]
+  reviews      Review[]
+  wishlist     WishlistItem[]
+}
+
+model Address {
+  id      String  @id @default(uuid())
+  userId  String?
+  name    String
+  line1   String
+  city    String
+  state   String
+  zip     String
+  country String
+  phone   String?
+  user    User?   @relation(fields: [userId], references: [id])
+  orders  Order[]
+}
+
+model Category {
+  id       String     @id @default(uuid())
+  name     String
+  parentId String?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  description String
+  price       Decimal        @db.Decimal(10, 2)
+  costPrice   Decimal        @default(0) @db.Decimal(10, 2)
+  stockQty    Int            @default(0)
+  imageURLs   String[]
+  categoryId  String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  category    Category       @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
+  wishlist    WishlistItem[]
+}
+
+model Order {
+  id                String        @id @default(uuid())
+  userId            String?
+  totalAmount       Decimal       @db.Decimal(10, 2)
+  status            OrderStatus   @default(PENDING)
+  shippingAddressId String?
+  paymentMethod     PaymentMethod @default(COD)
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentScreenshot String?
+  paymentTxnId      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  currency          String        @default("PKR")
+  currencySymbol    String        @default("Rs.")
+  exchangeRate      Decimal       @default(1.0) @db.Decimal(10, 6)
+  shippingAmount    Decimal       @default(0) @db.Decimal(10, 2)
+  taxAmount         Decimal       @default(0) @db.Decimal(10, 2)
+  profitAmount      Decimal       @default(0) @db.Decimal(10, 2)
+  shippingAddress   Address?      @relation(fields: [shippingAddressId], references: [id])
+  user              User?         @relation(fields: [userId], references: [id])
+  orderItems        OrderItem[]
+}
+
+model OrderItem {
+  id               String  @id @default(uuid())
+  orderId          String
+  productId        String
+  quantity         Int
+  priceAtOrder     Decimal @db.Decimal(10, 2)
+  costPriceAtOrder Decimal @default(0) @db.Decimal(10, 2)
+  customDesignUrl  String?
+  order            Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product @relation(fields: [productId], references: [id])
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  userId    String?
+  sessionId String?
+  productId String
+  quantity  Int
+  product   Product @relation(fields: [productId], references: [id])
+  user      User?   @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  date      DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  dateAdded DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Decal {
+  id        String   @id @default(uuid())
+  name      String
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
+model GlobalSettings {
+  id                   Int      @id @default(1)
+  taxRate              Decimal  @default(0) @db.Decimal(10, 2)
+  deliveryFee          Decimal  @default(0) @db.Decimal(10, 2)
+  customizedShirtPrice Decimal  @default(0) @db.Decimal(10, 2)
+  customizedShirtCostPrice Decimal @default(0) @db.Decimal(10, 2)
+  updatedAt            DateTime @updatedAt
 }
 
 enum Role {
@@ -28,151 +168,9 @@ enum PaymentMethod {
 
 enum PaymentStatus {
   PENDING
-  VERIFICATION_PENDING // Waiting for admin to verify screenshot
+  VERIFICATION_PENDING
   VERIFIED
-  APPROVED             // For COD or confirmed payment, ready for delivery
   FAILED
   REFUNDED
-}
-
-model User {
-  id           String      @id @default(uuid())
-  name         String?
-  email        String?     @unique
-  phone        String?     // For mobile contact
-  googleId     String?     @unique // For Social Login
-  passwordHash String?
-  role         Role        @default(USER)
-  isGuest      Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  addresses    Address[]
-  orders       Order[]
-  cartItems    CartItem[]
-  reviews      Review[]
-  wishlist     WishlistItem[]
-}
-
-model Address {
-  id        String   @id @default(uuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  name      String   // E.g. Home, Office
-  line1     String
-  city      String
-  state     String
-  zip       String
-  country   String
-  phone     String?  // Shipping phone number
-
-  orders    Order[]
-}
-
-model Category {
-  id        String     @id @default(uuid())
-  name      String
-  parentId  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
-
-  products  Product[]
-}
-
-model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Decimal  @db.Decimal(10, 2)
-  stockQty    Int      @default(0)
-  imageURLs   String[]
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
-  reviews     Review[]
-  wishlist    WishlistItem[]
-}
-
-model Order {
-  id                String   @id @default(uuid())
-  userId            String?
-  user              User?    @relation(fields: [userId], references: [id])
-  totalAmount       Decimal  @db.Decimal(10, 2)
-  taxAmount         Decimal  @default(0) @db.Decimal(10, 2)
-  shippingAmount    Decimal  @default(0) @db.Decimal(10, 2)
-  currency          String   @default("PKR")
-  currencySymbol    String   @default("Rs.")
-  status            OrderStatus @default(PENDING)
-  shippingAddressId String?
-  shippingAddress   Address? @relation(fields: [shippingAddressId], references: [id])
-  
-  paymentMethod     PaymentMethod @default(COD)
-  paymentStatus     PaymentStatus @default(PENDING)
-  paymentScreenshot String? // S3/Cloud storage URL for manual bank transfer proof
-  paymentTxnId      String? // For Stripe IDs later
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  orderItems        OrderItem[]
-}
-
-model OrderItem {
-  id           String   @id @default(uuid())
-  orderId      String
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId    String
-  product      Product  @relation(fields: [productId], references: [id])
-  quantity     Int
-  priceAtOrder Decimal  @db.Decimal(10, 2)
-  customDesignUrl String?
-}
-
-model CartItem {
-  id        String   @id @default(uuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  sessionId String?  // for guests
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int
-}
-
-model Review {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  rating    Int
-  comment   String?
-  date      DateTime @default(now())
-}
-
-model WishlistItem {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  dateAdded DateTime @default(now())
-}
-
-model Decal {
-  id        String   @id @default(uuid())
-  name      String
-  imageUrl  String
-  createdAt DateTime @default(now())
-}
-
-model GlobalSettings {
-  id          Int      @id @default(1)
-  taxRate     Decimal  @default(0) @db.Decimal(10, 2) // As percentage (ignore for now) or fixed?
-  deliveryFee Decimal  @default(0) @db.Decimal(10, 2)
-  updatedAt   DateTime @updatedAt
+  APPROVED
 }

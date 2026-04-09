@@ -78,28 +78,62 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     }
     
-    const { rate = 1 } = req.body; // Expecting conversion rate from frontend
+    const { rate = 1 } = req.body; // Conversion rate from PKR to customer currency
+    const numericRate = Number(rate) || 1;
     
-    // Fetch global settings
+    // Fetch global settings (values stored in PKR)
     const settings = await (prisma as any).globalSettings.findFirst();
-    const taxRate = settings ? Number(settings.taxRate) : 0;
-    const deliveryFeeBase = settings ? Number(settings.deliveryFee) : 0;
+    const taxRate = settings ? Number(settings.taxRate) : 0;  // percentage
+    const deliveryFeeBasePKR = settings ? Number(settings.deliveryFee) : 0;  // in PKR
     
-    // Calculate subtotal
-    let subtotal = 0;
+    // Calculate subtotal and profit - ALL in PKR
+    let subtotalPKR = 0;
+    let totalCostPKR = 0;
+    
+    // Fetch products to get current cost price (stored in PKR)
+    const productIds = items.map((item: any) => item.productId);
+    const productsInDb = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, costPrice: true, price: true }
+    });
+
+    const costPriceMap: Record<string, number> = {};
+    const retailPriceMap: Record<string, number> = {};
+    productsInDb.forEach(p => {
+      costPriceMap[p.id] = Number(p.costPrice);
+      retailPriceMap[p.id] = Number(p.price);
+    });
+
     const orderItemsData = items.map((item: any) => {
-      subtotal += Number(item.price) * item.quantity;
+      // item.price comes from frontend in CUSTOMER's currency
+      // Convert back to PKR for storage: divide by rate
+      const itemPricePKR = numericRate !== 0 ? Number(item.price) / numericRate : Number(item.price);
+      
+      // Fix: If it has customDesignUrl, use the global customCostPrice from settings
+      // Otherwise use the product's individual costPrice
+      const isCustomized = !!item.customDesignUrl;
+      const globalCustomCost = settings ? Number((settings as any).customizedShirtCostPrice || 0) : 0;
+      
+      const itemCostPKR = isCustomized ? globalCustomCost : (costPriceMap[item.productId] || 0);
+      const quantity = Number(item.quantity);
+      
+      subtotalPKR += itemPricePKR * quantity;
+      totalCostPKR += itemCostPKR * quantity;
+
       return {
         productId: item.productId,
-        quantity: item.quantity,
-        priceAtOrder: item.price,
+        quantity: quantity,
+        priceAtOrder: Number(itemPricePKR.toFixed(2)),  // Store in PKR
+        costPriceAtOrder: itemCostPKR,                  // Already in PKR
         customDesignUrl: item.customDesignUrl || null,
       };
     });
 
-    const taxAmount = Number((subtotal * (taxRate / 100)).toFixed(2));
-    const shippingAmount = Number((deliveryFeeBase * Number(rate)).toFixed(2));
-    const totalAmount = Number((subtotal + taxAmount + shippingAmount).toFixed(2));
+    // All financial calculations in PKR
+    const taxAmountPKR = Number((subtotalPKR * (taxRate / 100)).toFixed(2));
+    const shippingAmountPKR = deliveryFeeBasePKR;  // Already in PKR, no conversion needed
+    const totalAmountPKR = Number((subtotalPKR + taxAmountPKR + shippingAmountPKR).toFixed(2));
+    const profitAmountPKR = Number((subtotalPKR - totalCostPKR).toFixed(2));
 
     let paymentScreenshot = null;
     let paymentStatus: 'PENDING' | 'VERIFICATION_PENDING' = 'PENDING';
@@ -141,11 +175,13 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     const order = await prisma.order.create({
       data: {
         userId,
-        totalAmount,
-        taxAmount,
-        shippingAmount,
-        currency: currency || 'PKR',
-        currencySymbol: currencySymbol || 'Rs.',
+        totalAmount: totalAmountPKR,
+        taxAmount: taxAmountPKR,
+        shippingAmount: shippingAmountPKR,
+        profitAmount: profitAmountPKR,
+        currency: (currency as string) || 'PKR',
+        currencySymbol: (currencySymbol as string) || 'Rs.',
+        exchangeRate: numericRate,   // Store the rate used at checkout
         paymentMethod,
         paymentStatus,
         paymentScreenshot,
@@ -162,38 +198,44 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     // Fetch user email for confirmation
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
     
-    // Send order confirmation email (non-blocking)
+    // Send emails (non-blocking)
     if (user?.email) {
-      // Map items with names for the email
-      const emailItems = items.map((item: any) => ({
+      // 1. Customer Email: Native Currency (Amounts * Rate)
+      const customerEmailItems = items.map((item: any) => ({
         name: item.name || 'Product Acquisition',
         quantity: item.quantity,
-        price: item.price
+        price: Number(item.price) // Already in customer currency from frontend
       }));
 
       sendOrderConfirmationEmail(
         user.email,
         user.name || 'Customer',
         order.id,
-        totalAmount,
-        emailItems,
+        Number((totalAmountPKR * numericRate).toFixed(2)),
+        customerEmailItems,
         paymentMethod,
-        taxAmount,
-        shippingAmount,
-        (order as any).currencySymbol
-      ).catch(err => console.error('Email send failed:', err));
+        Number((taxAmountPKR * numericRate).toFixed(2)),
+        Number((shippingAmountPKR * numericRate).toFixed(2)),
+        (currencySymbol as string) || 'Rs.'
+      ).catch(err => console.error('Customer Email failed:', err));
 
-      // 🚨 Notify Admin of new order
+      // 2. Admin Email: Always PKR Notifications
+      const adminEmailItems = items.map((item: any) => ({
+        name: item.name || 'Product',
+        quantity: item.quantity,
+        price: numericRate !== 0 ? Number(item.price) / numericRate : Number(item.price) // Convert back to PKR
+      }));
+
       sendAdminOrderNotificationEmail(
         order.id,
-        totalAmount,
+        totalAmountPKR,
         user.name || 'Customer',
         user.email,
         paymentMethod,
-        emailItems,
-        taxAmount,
-        shippingAmount,
-        (order as any).currencySymbol
+        adminEmailItems,
+        taxAmountPKR,
+        shippingAmountPKR,
+        'Rs.'
       ).catch(err => console.error('Admin Email Notification failed:', err));
     }
 
@@ -273,15 +315,17 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
 
     // Send payment status email to customer (non-blocking)
     if (order.user?.email && (paymentStatus === 'VERIFIED' || paymentStatus === 'FAILED' || paymentStatus === 'APPROVED')) {
+      const rate = Number(order.exchangeRate || 1.0);
+      
       sendPaymentStatusEmail(
         order.user.email,
         order.user.name || 'Customer',
         order.id,
         paymentStatus,
-        Number(order.totalAmount),
-        Number(order.taxAmount || 0),
-        Number(order.shippingAmount || 0),
-        (order as any).currencySymbol
+        Number((Number(order.totalAmount) * rate).toFixed(2)),
+        Number((Number(order.taxAmount || 0) * rate).toFixed(2)),
+        Number((Number(order.shippingAmount || 0) * rate).toFixed(2)),
+        (order as any).currencySymbol || 'Rs.'
       ).catch(err => console.error('Email send failed:', err));
     }
 

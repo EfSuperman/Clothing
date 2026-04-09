@@ -22,12 +22,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`, req.body);
+  next();
+});
+
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import orderRoutes from './routes/order.routes';
 import addressRoutes from './routes/address.routes';
 import decalRoutes from './routes/decal.routes';
 import settingsRoutes from './routes/settings.routes';
+import categoryRoutes from './routes/category.routes';
 import path from 'path';
 
 // Serve uploaded files
@@ -40,6 +46,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/decals', decalRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });
@@ -49,9 +56,20 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Clothing eCommerce Backend Running');
 });
 
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('GLOBAL ERROR:', err);
+  res.status(500).json({ message: 'Internal Server Error', error: err.message });
+});
+
 // Port
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Permanent heartbeat to keep process alive in this environment
+setInterval(() => {
+  // Keeping the event loop active
+}, 1000 * 60);
